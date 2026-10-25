@@ -137,16 +137,16 @@ graph TD
 
 ## 3. IPv4 Addressing: From Start to End
 
-An **Internet Protocol Version 4 (IPv4) Address** is a 32-bit numerical identifier assigned to every device communicating on an IP network.
+An **Internet Protocol Version 4 (IPv4) Address** is an identifier assigned to every device communicating on a network.
 
-* **Identity**: Identifies *who* the machine is on the network.
-* **Location & Routing**: Identifies *where* the machine is located so routers can deliver packets to it.
+* **Identity**: Identifies *who* the device is on the network.
+* **Location & Routing**: Identifies *where* the device is located so routers can deliver packets to it.
 
 ---
 
 ### The Architecture of an IPv4 Address
 
-An IPv4 address consists of **32 binary bits** organized into **4 Octets (8 bits or 1 byte each)**, separated by dots (Dotted-Decimal Notation):
+An IPv4 address is composed of **4 numbers separated by dots** (e.g., `192.168.1.50`):
 
 ```mermaid
 %%{init: {
@@ -164,14 +164,14 @@ An IPv4 address consists of **32 binary bits** organized into **4 Octets (8 bits
   'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
 }}%%
 graph LR
-    subgraph IPv4["IPv4: 32 Total Bits (4 Octets)"]
-        O1["Octet 1<br/><b>8 bits</b><br/>0 to 255"]
+    subgraph IPv4["IPv4: 4 Numbers (Octets)"]
+        O1["Number 1<br/><b>0 to 255</b>"]
         Dot1["."]
-        O2["Octet 2<br/><b>8 bits</b><br/>0 to 255"]
+        O2["Number 2<br/><b>0 to 255</b>"]
         Dot2["."]
-        O3["Octet 3<br/><b>8 bits</b><br/>0 to 255"]
+        O3["Number 3<br/><b>0 to 255</b>"]
         Dot3["."]
-        O4["Octet 4<br/><b>8 bits</b><br/>0 to 255"]
+        O4["Number 4<br/><b>0 to 255</b>"]
 
         O1 --- Dot1 --- O2 --- Dot2 --- O3 --- Dot3 --- O4
     end
@@ -185,19 +185,17 @@ graph LR
     class Dot1,Dot2,Dot3 cDot;
 ```
 
-#### Why does each octet range from 0 to 255?
-Each octet is composed of **8 binary bits** (where each bit can be only `0` or `1`):
-* **Minimum value (all 8 bits set to 0)**:
-  $$00000000_2 = 0$$
-* **Maximum value (all 8 bits set to 1)**:
-  $$11111111_2 = 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = 255$$
-* **Total values per octet**: $2^8 = 256$ possible values ($0, 1, 2, \dots, 255$).
+#### Why does each number range from 0 to 255?
+* Each of the 4 slots can hold **256 different values** (counting from `0` up to `255`).
+* You cannot have a number higher than 255. An address like `192.168.1.300` is invalid.
+* Total possible combinations:
+  $$256 \times 256 \times 256 \times 256 = \mathbf{4,294,967,296} \text{ (approx. 4.29 Billion Addresses)}$$
 
 ---
 
 ### The Entire IPv4 Address Spectrum: The Start and The End
 
-The entire IPv4 universe begins at all zeros and ends at all ones:
+Every IPv4 address in the world exists between the absolute lowest possible number and the absolute highest possible number:
 
 ```mermaid
 %%{init: {
@@ -215,9 +213,9 @@ The entire IPv4 universe begins at all zeros and ends at all ones:
   'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
 }}%%
 graph LR
-    StartNode["🟢 START OF IPv4<br/><b>0.0.0.0</b><br/>Binary: 00000000.00000000.00000000.00000000<br/>(All 32 bits = 0)"]
+    StartNode["🟢 START OF IPv4<br/><b>0.0.0.0</b><br/>All 4 slots at minimum (0)"]
     Spectrum["4,294,967,296 Total Addresses<br/>(Public IPs · Private LANs · Cloud VPCs · Multicast)"]
-    EndNode["🔴 END OF IPv4<br/><b>255.255.255.255</b><br/>Binary: 11111111.11111111.11111111.11111111<br/>(All 32 bits = 1)"]
+    EndNode["🔴 END OF IPv4<br/><b>255.255.255.255</b><br/>All 4 slots at maximum (255)"]
 
     StartNode -->|"Expands across 4.29 Billion IPs"| Spectrum
     Spectrum -->|"Terminates at"| EndNode
@@ -232,21 +230,18 @@ graph LR
 ```
 
 #### 1. What is the START: `0.0.0.0`?
-* **Binary Representation**: `00000000.00000000.00000000.00000000`
-* **What it means**:
-  * **Default Route / Wildcard**: In routing tables (`0.0.0.0/0`), it means *"any destination on the internet"* (the default gateway).
-  * **Server Binding**: When configuring a web server (e.g. Node.js `app.listen(3000, "0.0.0.0")` or NGINX), `0.0.0.0` instructs the operating system to listen on **all available network interfaces** (Ethernet, Wi-Fi, loopback, Docker bridge).
-  * **DHCP Initialization**: Before a computer receives an assigned IP, it uses `0.0.0.0` as its temporary source address to request an IP from a DHCP server.
+The absolute lowest number possible in IPv4. All four slots are at `0`.
+* **Default Route / Wildcard**: In routing tables (`0.0.0.0/0`), it represents *"any network or destination on the internet"*.
+* **Server Binding**: When configuring a web server in code (e.g. `app.listen(3000, "0.0.0.0")` in Node.js, Go, Python, or NGINX), `0.0.0.0` instructs the server to accept traffic on **all network connections** (Ethernet, Wi-Fi, local Docker container).
+* **DHCP Initial Request**: Used as a temporary placeholder address when a new device boots up and asks the router for an IP.
 
 #### 2. What is the END: `255.255.255.255`?
-* **Binary Representation**: `11111111.11111111.11111111.11111111`
-* **What it means**:
-  * **Limited Broadcast Address**: A packet sent to `255.255.255.255` is delivered to **every single host** on the local physical network segment.
-  * **Routers Drop It**: Internet routers will **never forward** packets destined for `255.255.255.255` to prevent broadcast storms across the public internet.
+The absolute highest number possible in IPv4. All four slots are maxed out at `255`.
+* **Limited Broadcast Address**: Any packet sent to `255.255.255.255` is delivered to **every single device on the local network segment**.
+* **Dropped by Routers**: Internet routers will **never forward** this address across the internet to prevent network flooding.
 
 #### 3. How Many Total Addresses Exist?
-The total number of IPv4 addresses is:
-$$256 \times 256 \times 256 \times 256 = 2^{32} = 4,294,967,296 \text{ (approx. 4.29 Billion Addresses)}$$
+$$256 \times 256 \times 256 \times 256 = \mathbf{4,294,967,296} \text{ (approx. 4.29 Billion Total Addresses)}$$
 
 ---
 
@@ -368,24 +363,32 @@ A **Subnet** (sub-network) is a logical subdivision of an IP network.
 
 ### What is CIDR Notation?
 
-CIDR stands for **Classless Inter-Domain Routing**. It represents an IP address and its associated network mask using a slash followed by the number of leading bits reserved for the network prefix.
+CIDR stands for **Classless Inter-Domain Routing**. It writes an IP address with a slash number (e.g. `10.0.1.0/24`) to specify **which numbers in the address are locked (network)** and **which numbers are free to change for devices (hosts)**.
+
+Think of an IPv4 address as 4 slots: `[Slot 1] . [Slot 2] . [Slot 3] . [Slot 4]`
 
 ```text
        IP Address: 10 .  0 .  1 . 15 / 24
-Binary Conversion: 00001010 . 00000000 . 00000001 . 00001111
-  Network Bits   : [-------- 24 Network Bits --------] [8 Host Bits]
+         Meaning : [ Locked: 10 . 0 . 1 ] . [ Free: 0 to 255 ]
 ```
 
-* The first **24 bits** identify the **Network/Subnet**.
-* The remaining **8 bits** identify the **Host (individual machine/pod)** within that subnet.
+* **`/24`**: The **first 3 numbers are locked** (`10.0.1.x`). Only the **4th number is free** to change (from `0` to `255`).
+  * Total IPs available: **256 addresses** (`10.0.1.0` to `10.0.1.255`).
+* **`/16`**: The **first 2 numbers are locked** (`10.0.x.x`). The **last 2 numbers are free** to change.
+  * Total IPs available: $256 \times 256 = \mathbf{65,536 \text{ addresses}}$.
+* **`/8`**: Only the **1st number is locked** (`10.x.x.x`). The **last 3 numbers are free** to change.
+  * Total IPs available: $256 \times 256 \times 256 = \mathbf{16,777,216 \text{ addresses}}$.
+* **`/32`**: **All 4 numbers are locked**. Represents **exactly 1 single IP address** (e.g. `10.0.1.15/32`).
+
+---
 
 ### Breaking Down a `/24` Subnet (`10.0.1.0/24`)
 
-* **Subnet Mask**: `255.255.255.0`
-* **Total IP Addresses**: $2^{32 - 24} = 2^8 = 256$ IPs.
-* **Network Address**: `10.0.1.0` (Identifies the subnet; cannot be assigned to a host).
-* **Broadcast Address**: `10.0.1.255` (Sends packets to all hosts in the subnet; cannot be assigned to a host).
-* **Usable Host Addresses**: `10.0.1.1` through `10.0.1.254` (**254 usable IPs**).
+* **Subnet Mask**: `255.255.255.0` (indicates the first 3 numbers are fixed).
+* **Total IP Addresses**: **256 total numbers** (from `.0` up to `.255`).
+* **Network Address**: `10.0.1.0` (Identifies the subnet name; cannot be assigned to a device).
+* **Broadcast Address**: `10.0.1.255` (Reaches all devices in this subnet; cannot be assigned to a device).
+* **Usable Host Addresses**: `10.0.1.1` through `10.0.1.254` (**254 usable IPs for servers/pods**).
 
 > [!CAUTION]
 > **Cloud Provider Reserved IPs (e.g. AWS VPC)**:  
