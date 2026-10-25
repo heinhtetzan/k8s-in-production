@@ -213,12 +213,13 @@ Compiled, statically typed language developed by Google featuring lightweight go
 | **Language & Runtime** | **Go 1.22+** | Compiles directly to native machine code; no virtual machine, no external runtime dependencies |
 | **Primary Frameworks** | **Gin**, **Fiber**, **Echo**, Standard `net/http` | Standard library `net/http` is production-ready; Gin/Fiber provide routing, validation, and middleware |
 | **Dependency Manager** | **Go Modules** (`go.mod`, `go.sum`) | Built directly into the Go toolchain (`go mod download`, `go mod tidy`) |
-| **Web Server** | **Built-in `http.Server`** | Native multi-threaded HTTP/1.1 and HTTP/2 server backed by Go's goroutine runtime |
+| **Web Server / Reverse Proxy** | **Built-in `http.Server`** / **Caddy** | Native HTTP/1.1 and HTTP/2 in standard library; **Caddy** is the leading modern Go-written web server and reverse proxy with automatic HTTPS and HTTP/3 |
 | **Database** | **PostgreSQL**, **MySQL** | Managed via `pgx` (high-performance pure Go driver), GORM, or `sqlx` |
 | **Cache & Queue** | **Redis (`go-redis`) + Kafka / NATS** | Ultra-fast caching with `go-redis`; NATS or Kafka for microservice messaging |
 
 ### Production & Kubernetes Packaging Pattern:
 Go is the **gold standard for Kubernetes containers** (Kubernetes itself is written in Go):
+* **Caddy in Production**: Because **Caddy** is written 100% in Go, it is widely adopted as a cloud-native reverse proxy, static file server, and API gateway with automatic TLS (zero-config Let's Encrypt certificates) and modular Go plugin extensions.
 * **Multi-stage Dockerfile**: Compiles the binary in a build stage, then copies the standalone binary into an empty `FROM scratch` or `FROM gcr.io/distroless/static-debian12` image.
 * **Final Image Size**: **10 MB to 25 MB** total image size with zero extra OS packages or vulnerabilities.
 * **Cold Start**: **< 5 milliseconds**.
@@ -237,12 +238,13 @@ Compiled, memory-safe systems language with zero-cost abstractions, no garbage c
 | **Async Runtime** | **Tokio** | Multi-threaded, work-stealing async runtime powering non-blocking network I/O and task scheduling |
 | **Primary Frameworks** | **Axum**, **Actix Web**, **Poem**, **Rocket** | Axum (ergonomic, modular web framework maintained by Tokio team), Actix Web (consistently ranks #1 on TechEmpower benchmarks) |
 | **Dependency Manager & Build**| **Cargo** (`Cargo.toml`, `Cargo.lock`) | Official package manager and build system. In Docker: use `cargo-chef` to cache dependencies across builds |
-| **Web Server** | **Hyper** | Fast, reliable asynchronous HTTP/1.1 and HTTP/2 implementation powering Axum and Actix |
+| **Web Server / Reverse Proxy** | **Hyper** / **Ferron** | **Hyper** is the high-performance async HTTP engine powering Axum and Actix; **Ferron** is a modern, memory-safe web server and reverse proxy written in Rust with built-in automatic TLS and observability |
 | **Database & ORM** | **PostgreSQL**, **MySQL**, **SQLite** | **SQLx** (compile-time verified async SQL), **SeaORM** (async dynamic ORM), or **Diesel** |
 | **Cache & Queue** | **Redis (`redis-rs` / `fred`)**, **Kafka (`rdkafka`)** | Ultra-low latency connection pooling to Redis and native Kafka consumers |
 
 ### Production & Kubernetes Packaging Pattern:
 Rust provides the **highest efficiency and lowest resource consumption** of any cloud-native backend:
+* **Ferron in Production**: **Ferron** is a fast, memory-safe web server and reverse proxy built completely in Rust. It serves as a modern Rust counterpart to NGINX and Caddy, offering automatic TLS/SSL renewal, readable configuration, and first-class request tracing with trace IDs for production debugging.
 * **Cargo-Chef Layer Caching**: Because compiling all dependencies in Docker can be slow, `cargo-chef` is standard in CI pipelines to cache compiled crates and only recompile user code:
   ```dockerfile
   FROM lukemathwalker/cargo-chef:latest-rust-1.80 AS chef
@@ -275,5 +277,5 @@ Rust provides the **highest efficiency and lowest resource consumption** of any 
 | **Python (FastAPI / Django)**| Async Event Loop (ASGI) / Multi-Worker (WSGI) | uv / Poetry / pip | Gunicorn + Uvicorn / NGINX | 90 – 280 MB | 120 – 260 MB | 150 – 500 ms |
 | **Java (Spring Boot 3)** | Multi-threaded OS Threads | Maven / Gradle | Embedded Tomcat / Netty | 300 – 800 MB | 200 – 450 MB | 2 – 6 s (JVM) / 30ms (AOT) |
 | **C# (ASP.NET Core)** | Thread Pool + async/await | NuGet | Kestrel internal server | 80 – 200 MB | 80 – 180 MB | 100 – 400 ms (JIT) / 20ms (AOT) |
-| **Go (Gin / net/http)** | Goroutines (M:N scheduler) | Go Modules | Built-in `net/http` | **15 – 50 MB** | **12 – 30 MB** | **< 5 ms** |
-| **Rust (Axum / Actix)** | Async Work-stealing (Tokio) | Cargo | Built-in Hyper / native | **8 – 25 MB** | **10 – 20 MB** | **< 2 ms** |
+| **Go (Gin / net/http)** | Goroutines (M:N scheduler) | Go Modules | Built-in `net/http` / Caddy | **15 – 50 MB** | **12 – 30 MB** | **< 5 ms** |
+| **Rust (Axum / Actix)** | Async Work-stealing (Tokio) | Cargo | Built-in Hyper / Ferron | **8 – 25 MB** | **10 – 20 MB** | **< 2 ms** |
