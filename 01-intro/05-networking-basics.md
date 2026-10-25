@@ -135,14 +135,18 @@ graph TD
 
 ---
 
-## 3. IP Addresses: IPv4 vs. IPv6
+## 3. IPv4 Addressing: From Start to End
 
-An **Internet Protocol (IP) Address** is a unique numerical label assigned to every device connected to a computer network that uses the Internet Protocol for communication.
+An **Internet Protocol Version 4 (IPv4) Address** is a 32-bit numerical identifier assigned to every device communicating on an IP network.
 
-* **Identity**: Identifies *who* the machine is.
-* **Location / Routing**: Identifies *where* the machine is located on the global network topology.
+* **Identity**: Identifies *who* the machine is on the network.
+* **Location & Routing**: Identifies *where* the machine is located so routers can deliver packets to it.
 
-### IPv4 vs. IPv6 Architecture
+---
+
+### The Architecture of an IPv4 Address
+
+An IPv4 address consists of **32 binary bits** organized into **4 Octets (8 bits or 1 byte each)**, separated by dots (Dotted-Decimal Notation):
 
 ```mermaid
 %%{init: {
@@ -154,36 +158,119 @@ An **Internet Protocol (IP) Address** is a unique numerical label assigned to ev
     'primaryTextColor': '#e2e8f0',
     'primaryBorderColor': '#475569',
     'lineColor': '#64748b',
-    'textColor': '#e2e8f0'
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
   },
   'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
 }}%%
-graph TD
-    subgraph IPv4["IPv4: 32-Bit Address (4 Octets / Decimal)"]
-        v4["192 . 168 . 1 . 50<br/>(8 bits) . (8 bits) . (8 bits) . (8 bits) = 32 bits<br/><b>Total Addresses: 2^32 ≈ 4.29 Billion</b>"]
+graph LR
+    subgraph IPv4["IPv4: 32 Total Bits (4 Octets)"]
+        O1["Octet 1<br/><b>8 bits</b><br/>0 to 255"]
+        Dot1["."]
+        O2["Octet 2<br/><b>8 bits</b><br/>0 to 255"]
+        Dot2["."]
+        O3["Octet 3<br/><b>8 bits</b><br/>0 to 255"]
+        Dot3["."]
+        O4["Octet 4<br/><b>8 bits</b><br/>0 to 255"]
+
+        O1 --- Dot1 --- O2 --- Dot2 --- O3 --- Dot3 --- O4
     end
 
-    subgraph IPv6["IPv6: 128-Bit Address (8 Groups / Hexadecimal)"]
-        v6["2001 : 0db8 : 85a3 : 0000 : 0000 : 8a2e : 0370 : 7334<br/>(16 bits × 8 groups = 128 bits)<br/><b>Total Addresses: 2^128 ≈ 340 Undecillion</b>"]
-    end
+    style IPv4 fill:none,stroke:#2b6d51,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
 
-    style IPv4 fill:none,stroke:#38668c,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
-    style IPv6 fill:none,stroke:#2b6d51,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    classDef cOctet fill:#15241d,stroke:#2b6d51,stroke-width:1.5px,color:#e2e8f0;
+    classDef cDot fill:none,stroke:none,color:#94a3b8;
 
-    classDef c1 fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#e2e8f0;
-    classDef c2 fill:#15241d,stroke:#2b6d51,stroke-width:1.5px,color:#e2e8f0;
-
-    class v4 c1;
-    class v6 c2;
+    class O1,O2,O3,O4 cOctet;
+    class Dot1,Dot2,Dot3 cDot;
 ```
 
-| Feature | IPv4 | IPv6 |
-| :--- | :--- | :--- |
-| **Address Length** | 32 bits (4 bytes) | 128 bits (16 bytes) |
-| **Format** | 4 decimal numbers separated by dots (`172.217.16.206`) | 8 hexadecimal blocks separated by colons (`2607:f8b0:4005::200e`) |
-| **Total Address Pool** | $2^{32} \approx 4,294,967,296$ (4.29 billion) | $2^{128} \approx 3.4 \times 10^{38}$ (Virtually infinite) |
-| **Current Status** | Globally exhausted since 2011 (relies heavily on NAT) | Rapidly expanding, supported by all major clouds & K8s dual-stack |
-| **Configuration** | DHCP or manual static assignment | Stateless Address Autoconfiguration (SLAAC) or DHCPv6 |
+#### Why does each octet range from 0 to 255?
+Each octet is composed of **8 binary bits** (where each bit can be only `0` or `1`):
+* **Minimum value (all 8 bits set to 0)**:
+  $$00000000_2 = 0$$
+* **Maximum value (all 8 bits set to 1)**:
+  $$11111111_2 = 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = 255$$
+* **Total values per octet**: $2^8 = 256$ possible values ($0, 1, 2, \dots, 255$).
+
+---
+
+### The Entire IPv4 Address Spectrum: The Start and The End
+
+The entire IPv4 universe begins at all zeros and ends at all ones:
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph LR
+    StartNode["🟢 START OF IPv4<br/><b>0.0.0.0</b><br/>Binary: 00000000.00000000.00000000.00000000<br/>(All 32 bits = 0)"]
+    Spectrum["4,294,967,296 Total Addresses<br/>(Public IPs · Private LANs · Cloud VPCs · Multicast)"]
+    EndNode["🔴 END OF IPv4<br/><b>255.255.255.255</b><br/>Binary: 11111111.11111111.11111111.11111111<br/>(All 32 bits = 1)"]
+
+    StartNode -->|"Expands across 4.29 Billion IPs"| Spectrum
+    Spectrum -->|"Terminates at"| EndNode
+
+    classDef cStart fill:#15241d,stroke:#2b6d51,stroke-width:1.5px,color:#e2e8f0;
+    classDef cMid fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#e2e8f0;
+    classDef cEnd fill:#291919,stroke:#853d3d,stroke-width:1.5px,color:#e2e8f0;
+
+    class StartNode cStart;
+    class Spectrum cMid;
+    class EndNode cEnd;
+```
+
+#### 1. What is the START: `0.0.0.0`?
+* **Binary Representation**: `00000000.00000000.00000000.00000000`
+* **What it means**:
+  * **Default Route / Wildcard**: In routing tables (`0.0.0.0/0`), it means *"any destination on the internet"* (the default gateway).
+  * **Server Binding**: When configuring a web server (e.g. Node.js `app.listen(3000, "0.0.0.0")` or NGINX), `0.0.0.0` instructs the operating system to listen on **all available network interfaces** (Ethernet, Wi-Fi, loopback, Docker bridge).
+  * **DHCP Initialization**: Before a computer receives an assigned IP, it uses `0.0.0.0` as its temporary source address to request an IP from a DHCP server.
+
+#### 2. What is the END: `255.255.255.255`?
+* **Binary Representation**: `11111111.11111111.11111111.11111111`
+* **What it means**:
+  * **Limited Broadcast Address**: A packet sent to `255.255.255.255` is delivered to **every single host** on the local physical network segment.
+  * **Routers Drop It**: Internet routers will **never forward** packets destined for `255.255.255.255` to prevent broadcast storms across the public internet.
+
+#### 3. How Many Total Addresses Exist?
+The total number of IPv4 addresses is:
+$$256 \times 256 \times 256 \times 256 = 2^{32} = 4,294,967,296 \text{ (approx. 4.29 Billion Addresses)}$$
+
+---
+
+### The Complete IPv4 Address Map (From Start to End)
+
+The space between `0.0.0.0` and `255.255.255.255` is segmented into specific zones:
+
+| Address Range | CIDR Block | Total Addresses | Purpose / Function |
+| :--- | :--- | :--- | :--- |
+| **`0.0.0.0` – `0.255.255.255`** | `0.0.0.0/8` | 16,777,216 | **The Start**: Current network / default route / unassigned |
+| **`1.0.0.0` – `9.255.255.255`** | Various | ~150 Million | Public Routable Internet Addresses |
+| **`10.0.0.0` – `10.255.255.255`** | `10.0.0.0/8` | 16,777,216 | **RFC 1918 Private**: Cloud VPCs (AWS/GCP), Kubernetes Pods |
+| **`11.0.0.0` – `126.255.255.255`**| Various | ~1.9 Billion | Public Routable Internet Addresses |
+| **`127.0.0.0` – `127.255.255.255`**| `127.0.0.0/8` | 16,777,216 | **Loopback**: Localhost (`127.0.0.1`), never leaves the host |
+| **`128.0.0.0` – `169.253.255.255`**| Various | ~700 Million | Public Routable Internet Addresses |
+| **`169.254.0.0` – `169.254.255.255`**| `169.254.0.0/16` | 65,536 | **Link-Local / APIPA**: Auto-assigned; Cloud Metadata (`169.254.169.254`) |
+| **`170.0.0.0` – `172.15.255.255`**| Various | ~35 Million | Public Routable Internet Addresses |
+| **`172.16.0.0` – `172.31.255.255`**| `172.16.0.0/12` | 1,048,576 | **RFC 1918 Private**: Docker Bridge (`172.17.0.0/16`), corporate LANs |
+| **`172.32.0.0` – `192.167.255.255`**| Various | ~330 Million | Public Routable Internet Addresses |
+| **`192.168.0.0` – `192.168.255.255`**| `192.168.0.0/16` | 65,536 | **RFC 1918 Private**: Home Wi-Fi routers, small office networks |
+| **`192.169.0.0` – `223.255.255.255`**| Various | ~520 Million | Public Routable Internet Addresses |
+| **`224.0.0.0` – `239.255.255.255`**| `224.0.0.0/4` | 268,435,456 | **Class D (Multicast)**: Streaming audio/video, routing protocols (OSPF) |
+| **`240.0.0.0` – `255.255.255.254`**| `240.0.0.0/4` | 268,435,455 | **Class E (Reserved)**: Experimental, unassigned |
+| **`255.255.255.255`** | `255.255.255.255/32` | 1 | **The End**: Limited Broadcast address |
 
 ---
 
@@ -532,7 +619,6 @@ sequenceDiagram
 | Record Type | Name | Purpose | Example |
 | :--- | :--- | :--- | :--- |
 | **A** | Address | Maps domain name to an **IPv4 address** | `api.example.com` $\rightarrow$ `54.210.88.99` |
-| **AAAA** | IPv6 Address | Maps domain name to an **IPv6 address** | `api.example.com` $\rightarrow$ `2600:1f18::1` |
 | **CNAME** | Canonical Name | Creates an alias pointing to another domain name | `www.example.com` $\rightarrow$ `example.com` |
 | **ALIAS / ANAME** | Virtual CNAME | Allows CNAME-like routing at the domain root (apex `@`) | `example.com` $\rightarrow$ `my-alb-123.us-east-1.elb.amazonaws.com` |
 | **MX** | Mail Exchange | Directs emails to the destination mail server | `example.com` $\rightarrow$ `10 mail.google.com` |
