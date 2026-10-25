@@ -245,30 +245,6 @@ $$256 \times 256 \times 256 \times 256 = \mathbf{4,294,967,296} \text{ (approx. 
 
 ---
 
-### The Complete IPv4 Address Map (From Start to End)
-
-The space between `0.0.0.0` and `255.255.255.255` is segmented into specific zones:
-
-| Address Range | CIDR Block | Total Addresses | Purpose / Function |
-| :--- | :--- | :--- | :--- |
-| **`0.0.0.0` – `0.255.255.255`** | `0.0.0.0/8` | 16,777,216 | **The Start**: Current network / default route / unassigned |
-| **`1.0.0.0` – `9.255.255.255`** | Various | ~150 Million | Public Routable Internet Addresses |
-| **`10.0.0.0` – `10.255.255.255`** | `10.0.0.0/8` | 16,777,216 | **RFC 1918 Private**: Cloud VPCs (AWS/GCP), Kubernetes Pods |
-| **`11.0.0.0` – `126.255.255.255`**| Various | ~1.9 Billion | Public Routable Internet Addresses |
-| **`127.0.0.0` – `127.255.255.255`**| `127.0.0.0/8` | 16,777,216 | **Loopback**: Localhost (`127.0.0.1`), never leaves the host |
-| **`128.0.0.0` – `169.253.255.255`**| Various | ~700 Million | Public Routable Internet Addresses |
-| **`169.254.0.0` – `169.254.255.255`**| `169.254.0.0/16` | 65,536 | **Link-Local / APIPA**: Auto-assigned; Cloud Metadata (`169.254.169.254`) |
-| **`170.0.0.0` – `172.15.255.255`**| Various | ~35 Million | Public Routable Internet Addresses |
-| **`172.16.0.0` – `172.31.255.255`**| `172.16.0.0/12` | 1,048,576 | **RFC 1918 Private**: Docker Bridge (`172.17.0.0/16`), corporate LANs |
-| **`172.32.0.0` – `192.167.255.255`**| Various | ~330 Million | Public Routable Internet Addresses |
-| **`192.168.0.0` – `192.168.255.255`**| `192.168.0.0/16` | 65,536 | **RFC 1918 Private**: Home Wi-Fi routers, small office networks |
-| **`192.169.0.0` – `223.255.255.255`**| Various | ~520 Million | Public Routable Internet Addresses |
-| **`224.0.0.0` – `239.255.255.255`**| `224.0.0.0/4` | 268,435,456 | **Class D (Multicast)**: Streaming audio/video, routing protocols (OSPF) |
-| **`240.0.0.0` – `255.255.255.254`**| `240.0.0.0/4` | 268,435,455 | **Class E (Reserved)**: Experimental, unassigned |
-| **`255.255.255.255`** | `255.255.255.255/32` | 1 | **The End**: Limited Broadcast address |
-
----
-
 ## 4. Public IP vs. Private IP (and RFC 1918)
 
 Because the 4.29 billion IPv4 address pool was exhausted, the internet relies on a strict distinction between **Public** and **Private** IP addresses.
