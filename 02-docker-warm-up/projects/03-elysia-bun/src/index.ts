@@ -1,41 +1,96 @@
 import { Elysia } from 'elysia'
+import os from 'node:os'
+
+const startTime = Date.now()
+
+// Pure static mock task (stateless - no database or in-memory state manipulation)
+const staticTask = {
+  id: 1,
+  title: "Learn Kubernetes in Production",
+  is_done: false,
+  created: "2026-10-26T07:00:00Z"
+}
+
+const getSystemUsage = () => {
+  const mem = process.memoryUsage()
+  return {
+    status: "healthy",
+    uptime_seconds: Math.floor((Date.now() - startTime) / 1000),
+    memory_rss_mb: +(mem.rss / 1024 / 1024).toFixed(2),
+    memory_heap_mb: +(mem.heapUsed / 1024 / 1024).toFixed(2),
+    cpu_cores: os.cpus().length,
+    platform: process.platform
+  }
+}
 
 const app = new Elysia()
-  // Root welcome
+  // 1. GET / for {message, data: {techstack, version}}
   .get('/', () => ({
-    service: 'elysia-sample-api',
-    runtime: 'Bun',
-    framework: 'ElysiaJS',
-    status: 'online',
-    timestamp: new Date().toISOString()
+    message: "Service information",
+    data: {
+      techstack: "Bun + ElysiaJS",
+      version: "1.0.0"
+    }
   }))
 
-  // Health check endpoint (for K8s liveness/readiness probes)
-  .get('/api/health', () => ({
-    status: 'healthy',
-    uptime_seconds: Math.floor(process.uptime()),
-    environment: process.env.NODE_ENV || 'production'
+  // 2. POST /health for {message, data: {system_resource_usage}}
+  .post('/health', () => ({
+    message: "Service is healthy",
+    data: getSystemUsage()
+  }))
+  .get('/health', () => ({
+    message: "Service is healthy",
+    data: getSystemUsage()
   }))
 
-  // Sample Users REST endpoint
-  .get('/api/users', () => [
-    { id: 1, name: 'Alice Walker', role: 'DevOps Lead', email: 'alice@example.com' },
-    { id: 2, name: 'Bob Smith', role: 'Frontend Engineer', email: 'bob@example.com' },
-    { id: 3, name: 'Charlie Kim', role: 'SRE Specialist', email: 'charlie@example.com' }
-  ])
+  // 3. GET /tasks & /tasts (pure static data)
+  .get('/tasks', () => ({
+    message: "Tasks retrieved successfully",
+    data: [staticTask]
+  }))
+  .get('/tasts', () => ({
+    message: "Tasks retrieved successfully",
+    data: [staticTask]
+  }))
 
-  // Sample Products REST endpoint
-  .get('/api/products', () => [
-    { id: 'prod-001', name: 'Managed Kubernetes Node', price: 79.99, in_stock: true },
-    { id: 'prod-002', name: 'Application Load Balancer', price: 25.00, in_stock: true },
-    { id: 'prod-003', name: 'Persistent Block Volume 100GB', price: 10.00, in_stock: false }
-  ])
+  // 4. POST /tasks & /tasts (pure static data)
+  .post('/tasks', () => ({
+    message: "Task created successfully",
+    data: staticTask
+  }))
+  .post('/tasts', () => ({
+    message: "Task created successfully",
+    data: staticTask
+  }))
 
-  // Sample Server Metrics endpoint
-  .get('/api/metrics', () => ({
-    memory_usage_mb: Math.round(process.memoryUsage().rss / 1024 / 1024),
-    active_connections: 42,
-    http_requests_total: 10450
+  // 5. PUT /tasks & /tasts (pure static data)
+  .put('/tasks', () => ({
+    message: "Task updated successfully",
+    data: staticTask
+  }))
+  .put('/tasts', () => ({
+    message: "Task updated successfully",
+    data: staticTask
+  }))
+
+  // 6. PATCH /tasks & /tasts (pure static data)
+  .patch('/tasks', () => ({
+    message: "Task patched successfully",
+    data: staticTask
+  }))
+  .patch('/tasts', () => ({
+    message: "Task patched successfully",
+    data: staticTask
+  }))
+
+  // 7. DELETE /tasks & /tasts (pure static data)
+  .delete('/tasks', () => ({
+    message: "Task deleted successfully",
+    data: staticTask
+  }))
+  .delete('/tasts', () => ({
+    message: "Task deleted successfully",
+    data: staticTask
   }))
 
   .listen(3000)

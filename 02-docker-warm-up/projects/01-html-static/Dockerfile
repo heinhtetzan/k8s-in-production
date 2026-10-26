@@ -7,6 +7,9 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy all 5 HTML pages and CSS stylesheet into Nginx web root
 COPY . /usr/share/nginx/html/
 
+# Copy custom Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose HTTP port
 EXPOSE 80
 
