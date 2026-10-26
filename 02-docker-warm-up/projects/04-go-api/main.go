@@ -5,25 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"runtime"
-	"time"
 )
 
-type Task struct {
-	ID      int    `json:"id"`
-	Title   string `json:"title"`
-	IsDone  bool   `json:"is_done"`
-	Created string `json:"created"`
-}
-
-var startTime = time.Now()
-
-// Pure static mock task (stateless - no database or in-memory state manipulation)
-var staticTask = Task{
-	ID:      1,
-	Title:   "Learn Kubernetes in Production",
-	IsDone:  false,
-	Created: "2026-10-26T07:00:00Z",
+type AreaRequest struct {
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
 }
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -32,99 +18,58 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-func getSystemUsage() map[string]interface{} {
-	var mem runtime.MemStats
-	runtime.ReadMemStats(&mem)
-
-	return map[string]interface{}{
-		"status":          "healthy",
-		"uptime_seconds":  int(time.Since(startTime).Seconds()),
-		"memory_alloc_mb": float64(mem.Alloc) / 1024 / 1024,
-		"memory_sys_mb":   float64(mem.Sys) / 1024 / 1024,
-		"goroutines":      runtime.NumGoroutine(),
-		"cpu_cores":       runtime.NumCPU(),
-		"os_arch":         runtime.GOOS + "/" + runtime.GOARCH,
+func reverseString(s string) string {
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
 	}
+	return string(runes)
 }
 
-func main() {
+func setupMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// 1. GET / for {message, data: {techstack, version}}
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Service information",
-			"data": map[string]interface{}{
-				"techstack": "Go 1.22 net/http",
-				"version":   "1.0.0",
-			},
+	// 1. GET /
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		respondJSON(w, http.StatusOK, map[string]string{
+			"message": "Hello Go",
 		})
 	})
 
-	// 2. POST /health (and GET /health) for {message, data: {system_resource_usage}}
-	healthHandler := func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Service is healthy",
-			"data":    getSystemUsage(),
+	// 2. GET /reverse/{word}
+	mux.HandleFunc("GET /reverse/{word}", func(w http.ResponseWriter, r *http.Request) {
+		word := r.PathValue("word")
+		respondJSON(w, http.StatusOK, map[string]string{
+			"message": reverseString(word),
 		})
-	}
-	mux.HandleFunc("POST /health", healthHandler)
-	mux.HandleFunc("GET /health", healthHandler)
+	})
 
-	// 3. /tasks and /tasts (GET) - pure static data
-	handleGetTasks := func(w http.ResponseWriter, r *http.Request) {
+	// 3. POST /area
+	mux.HandleFunc("POST /area", func(w http.ResponseWriter, r *http.Request) {
+		var req AreaRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			respondJSON(w, http.StatusBadRequest, map[string]string{
+				"message": "Invalid JSON body",
+			})
+			return
+		}
 		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Tasks retrieved successfully",
-			"data":    []Task{staticTask},
+			"message": req.Width * req.Height,
 		})
-	}
-	mux.HandleFunc("GET /tasks", handleGetTasks)
-	mux.HandleFunc("GET /tasts", handleGetTasks)
+	})
 
-	// 4. /tasks and /tasts (POST) - pure static data
-	handlePostTasks := func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Task created successfully",
-			"data":    staticTask,
+	// 4. Catch-all fallback for 404 Not Found
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		respondJSON(w, http.StatusNotFound, map[string]string{
+			"message": "Route not found",
 		})
-	}
-	mux.HandleFunc("POST /tasks", handlePostTasks)
-	mux.HandleFunc("POST /tasts", handlePostTasks)
+	})
 
-	// 5. /tasks and /tasts (PUT) - pure static data
-	handlePutTasks := func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Task updated successfully",
-			"data":    staticTask,
-		})
-	}
-	mux.HandleFunc("PUT /tasks", handlePutTasks)
-	mux.HandleFunc("PUT /tasts", handlePutTasks)
+	return mux
+}
 
-	// 6. /tasks and /tasts (PATCH) - pure static data
-	handlePatchTasks := func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Task patched successfully",
-			"data":    staticTask,
-		})
-	}
-	mux.HandleFunc("PATCH /tasks", handlePatchTasks)
-	mux.HandleFunc("PATCH /tasts", handlePatchTasks)
-
-	// 7. /tasks and /tasts (DELETE) - pure static data
-	handleDeleteTasks := func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"message": "Task deleted successfully",
-			"data":    staticTask,
-		})
-	}
-	mux.HandleFunc("DELETE /tasks", handleDeleteTasks)
-	mux.HandleFunc("DELETE /tasts", handleDeleteTasks)
-
+func main() {
+	mux := setupMux()
 	port := ":8080"
 	fmt.Printf("🚀 Go API listening on http://0.0.0.0%s\n", port)
 	if err := http.ListenAndServe(port, mux); err != nil {

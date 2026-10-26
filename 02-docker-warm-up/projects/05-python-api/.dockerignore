@@ -10,3 +10,4 @@ venv/
 .DS_Store
 Dockerfile
 .dockerignore
+.pytest_cache
