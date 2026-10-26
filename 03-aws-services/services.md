@@ -25,6 +25,7 @@ Explore the three detailed end-to-end architecture diagrams illustrating the evo
 | **02** | **[Architecture 2: Horizontally Scaled Multi-AZ](02-horizontal-scaling-architecture.md)** | CloudFront, ALB, Auto Scaling (ASG), ElastiCache (Redis), Aurora/RDS Read Replicas, SQS, SES | High-traffic resilience, zero downtime, asynchronous offloading |
 | **03** | **[Architecture 3: Event-Driven Microservices](03-microservices-eda-architecture.md)** | EKS (Kubernetes), Lambda, EventBridge, ECR, DynamoDB, OpenSearch, Bedrock (AI/RAG), X-Ray | Enterprise scale, polyglot persistence, autonomous AI agents |
 | **CLI** | **[AWS CLI Operations Guide](aws-cli.md)** | Authentication, Profiles, Logout, S3, EC2, RDS | Terminal guide, EC2 launch & lifecycle, RDS provision & snapshots, S3 sync |
+| **IAM** | **[AWS IAM & Security Guide](aws-iam.md)** | Users, Policies, AdminAccess, S3 Only, EC2 Only, EKS | Least-privilege policies, EKS Access Entries, Pod Identity |
 
 ---
 

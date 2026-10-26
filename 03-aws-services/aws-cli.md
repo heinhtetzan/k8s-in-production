@@ -184,44 +184,72 @@ Manage virtual servers, instances lifecycle, security groups, and key pairs.
 
 ---
 
-### 4.1 Query & Filter Instances (`describe-instances`)
+### 4.1 Launch the Instance
+
+Launch an Ubuntu Server (ARM64) instance in region **`ap-southeast-2`** using AMI **`ami-0be7d1b5b9749d43a`**.
+
+> [!NOTE]
+> `ami-0be7d1b5b9749d43a` is an **ARM64** image. Therefore, use an ARM-based instance type like **`t4g.small`** or **`t4g.micro`**.
+
+#### Quick Launch (Uses Default VPC & Subnet automatically)
+```bash
+aws ec2 run-instances \
+  --region ap-southeast-2 \
+  --image-id ami-0be7d1b5b9749d43a \
+  --instance-type t4g.small \
+  --count 1 \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-ubuntu-server}]'
+```
+
+#### Launch with SSH Key Pair & Security Group (Ready to SSH)
+```bash
+aws ec2 run-instances \
+  --region ap-southeast-2 \
+  --image-id ami-0be7d1b5b9749d43a \
+  --instance-type t4g.small \
+  --key-name hello-aws \
+  --security-group-ids sg-03fa60d8037398646 \
+  --count 1 \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-ubuntu-server}]'
+```
+
+#### Launch with User Data Bootstrap Script (Auto-Install Docker)
+```bash
+aws ec2 run-instances \
+  --region ap-southeast-2 \
+  --image-id ami-0be7d1b5b9749d43a \
+  --instance-type t4g.small \
+  --user-data file://install-docker.sh \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=docker-host}]'
+```
+
+---
+
+### 4.2 View & Query Instances (`describe-instances`)
+
+Once an instance is launched, verify its state and retrieve its Public IP:
 
 ```bash
-# List all instances (raw JSON)
-aws ec2 describe-instances
-
-# List running instances with concise table output (ID, Type, State, IPs, Name Tag)
+# View running instances in ap-southeast-2 (ID, Type, Status, Public IP, Name)
 aws ec2 describe-instances \
-  --filters "Name=instance-state-name,Values=running" \
+  --region ap-southeast-2 \
+  --filters "Name=instance-state-name,Values=running,pending" \
   --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name,PublicIpAddress,PrivateIpAddress,Tags[?Key=='Name'].Value | [0]]" \
   --output table
 
 # Find specific instance by tag Name
 aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=web-server-prod"
-```
+  --region ap-southeast-2 \
+  --filters "Name=tag:Name,Values=my-ubuntu-server" \
+  --query "Reservations[*].Instances[*].[InstanceId,State.Name,PublicIpAddress]" \
+  --output table
 
----
-
-### 4.2 Launch an EC2 Instance (`run-instances`)
-
-```bash
-# Launch a t4g.small Amazon Linux 2023 instance with attached Security Group and Subnet
-aws ec2 run-instances \
-  --image-id ami-0c101f26f147fa7fd \
-  --instance-type t4g.small \
-  --key-name my-ssh-key \
-  --security-group-ids sg-0123456789abcdef0 \
-  --subnet-id subnet-0123456789abcdef0 \
-  --count 1 \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-app-server}]'
-
-# Launch instance with User Data bootstrap script
-aws ec2 run-instances \
-  --image-id ami-0c101f26f147fa7fd \
-  --instance-type t4g.small \
-  --user-data file://install-docker.sh \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=docker-host}]'
+# Get Public IP of a specific instance ID
+aws ec2 describe-instances \
+  --region ap-southeast-2 \
+  --instance-ids i-0123456789abcdef0 \
+  --query "Reservations[0].Instances[0].PublicIpAddress" \
+  --output text
 ```
 
 ---
