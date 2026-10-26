@@ -1,6 +1,6 @@
-# Docker Warmup: Essential Commands & Real-World Dockerfiles
+# Docker Warmup: Essential Commands & an Elysia Dockerfile
 
-A practical, hands-on guide covering the entire container journey: from pulling images and running containers with ports and volumes, to writing production-ready Dockerfiles (HTML, TanStack, Elysia, Go, Python), multi-architecture builds with `buildx`, and pushing to a remote registry.
+A practical, hands-on guide covering the container lifecycle, building and publishing images, and a Dockerfile that runs an Elysia app with Bun.
 
 ---
 
@@ -138,75 +138,67 @@ docker run --rm -it python:3.12-alpine python
 
 ---
 
-## 3. Real-World Dockerfiles (5 Practical Stacks)
+## 3. Entering a Running Container (`docker exec`)
 
-Here are 5 battle-tested Dockerfile examples covering modern web and backend stacks:
+Once a container is running in the background (detached with `-d`), you can jump inside it to explore files, inspect environment variables, or debug problems in real time.
 
-### 1. Simple HTML / Static Project
-Serves static HTML, CSS, and JS using the ultra-lightweight **NGINX Alpine** image.
+### Syntax
+```bash
+docker exec -it <container-name-or-id> <shell>
+```
 
-```dockerfile
-# File: Dockerfile
-FROM nginx:alpine
+* `-i` (**Interactive**): Keeps `STDIN` open so you can enter commands.
+* `-t` (**TTY**): Allocates a terminal prompt for you.
 
-# Remove default Nginx website
-RUN rm -rf /usr/share/nginx/html/*
+### Common Examples
 
-# Copy your HTML/CSS files into Nginx public directory
-COPY . /usr/share/nginx/html
+```bash
+# 1. Enter an Alpine-based container using 'sh'
+docker exec -it my-web sh
 
-# Expose HTTP port
-EXPOSE 80
+# 2. Enter an Ubuntu/Debian container using 'bash'
+docker exec -it my-web bash
 
-# Start Nginx in the foreground
-CMD ["nginx", "-g", "daemon off;"]
+# 3. Run a single command directly without opening a shell session
+docker exec my-web env
+docker exec my-web ls -la /app
+```
+
+> [!TIP]
+> **Which shell should you use (`sh` vs `bash`)?**
+> Minimal container images like Alpine Linux do not include `bash` by default. If you see:
+> `OCI runtime exec failed: exec: "bash": executable file not found in $PATH`
+> simply use **`sh`** instead of `bash`.
+
+To exit the container and return to your laptop's terminal, type **`exit`** or press **`Ctrl + D`**.
+
+---
+
+## 4. Managing Containers
+
+List running containers with `docker ps`. Add `-a` to include stopped containers:
+
+```bash
+docker ps
+docker ps -a
+```
+
+Start or stop a container by its name or ID. Remove a stopped container with `docker rm`; use `-f` only when you intend to stop and remove a running container:
+
+```bash
+docker start my-web
+docker stop my-web
+docker rm my-web
+
+# Force-stop and remove a running container
+docker rm -f my-web
 ```
 
 ---
 
-### 2. TanStack Project (React / Vite SPA)
-Uses a **Multi-Stage Build**:
-* **Stage 1 (Build)**: Installs dependencies and builds static assets with Node.js.
-* **Stage 2 (Serve)**: Copies only the compiled `dist/` folder into a tiny NGINX image (~25MB total).
+## 5. Elysia Project (Bun Runtime)
 
-```dockerfile
-# File: Dockerfile
-
-# ==========================================
-# Stage 1: Build the Application
-# ==========================================
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy package files first to leverage Docker layer caching
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# Copy all source files and compile
-COPY . .
-RUN npm run build
-
-# ==========================================
-# Stage 2: Serve with NGINX
-# ==========================================
-FROM nginx:alpine
-
-# Copy built production assets from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Optional: Copy custom nginx.conf for client-side SPA routing
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-```
-
----
-
-### 3. Elysia Project (Bun Runtime)
-Elysia is an ultra-fast web framework running natively on **Bun**.
+Elysia runs on Bun. Save this as `Dockerfile` in the Elysia app directory:
 
 ```dockerfile
 # File: Dockerfile
@@ -214,9 +206,9 @@ FROM oven/bun:1-alpine
 
 WORKDIR /app
 
-# Cache package dependencies
-COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile --production
+# Install production dependencies
+COPY package.json ./
+RUN bun install --production
 
 # Copy source code
 COPY . .
@@ -231,85 +223,7 @@ CMD ["bun", "run", "src/index.ts"]
 
 ---
 
-### 4. Go Project (Zero-Dependency Static Binary)
-Uses a **Multi-Stage Build** to produce a tiny **~15MB container** using Google Distroless or `scratch`.
-
-```dockerfile
-# File: Dockerfile
-
-# ==========================================
-# Stage 1: Compile Go Binary
-# ==========================================
-FROM golang:1.22-alpine AS builder
-
-WORKDIR /app
-
-# Install git/certs if needed
-RUN apk add --no-cache ca-certificates
-
-# Cache dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy source code
-COPY . .
-
-# Compile a fully static binary (CGO_ENABLED=0) with stripped debug info (-ldflags="-w -s")
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server .
-
-# ==========================================
-# Stage 2: Minimal Distroless Runtime
-# ==========================================
-FROM gcr.io/distroless/static-debian12
-
-WORKDIR /
-
-# Copy the compiled binary and root certificates
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /app/server /server
-
-# Non-root user
-USER nonroot:nonroot
-
-EXPOSE 8080
-
-ENTRYPOINT ["/server"]
-```
-
----
-
-### 5. Python Project (FastAPI / Flask)
-Uses a non-root user, proper virtual environment, and no cache to keep the image slim and secure.
-
-```dockerfile
-# File: Dockerfile
-FROM python:3.12-slim
-
-# Prevent Python from writing .pyc files & enable unbuffered logs
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
-WORKDIR /app
-
-# Install dependencies in a single layer
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
-
-# Create a non-root user for production security
-RUN useradd -m appuser && chown -R appuser:appuser /app
-USER appuser
-
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
----
-
-## 4. `docker build` & `docker buildx`: Building Images
+## 6. `docker build` & `docker buildx`: Building Images
 
 ### Standard Build (`docker build`)
 Builds a local image using the `Dockerfile` in the current folder:
@@ -336,7 +250,10 @@ To build images that run anywhere, use **`docker buildx`**:
 # 1. Create and switch to a multi-platform builder
 docker buildx create --name mybuilder --use
 
-# 2. Build for BOTH Intel (amd64) and Apple/ARM (arm64) and push directly
+# 2. Log in to the target registry before pushing
+docker login
+
+# 3. Build for BOTH Intel (amd64) and Apple/ARM (arm64) and push directly
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t myusername/myapp:1.0.0 \
@@ -345,7 +262,7 @@ docker buildx build \
 
 ---
 
-## 5. `docker tag`: Versioning & Naming for Registries
+## 7. `docker tag`: Versioning & Naming for Registries
 
 Before pushing an image to Docker Hub, GitHub, or AWS, you must tag it with the target registry repository name:
 
@@ -371,7 +288,7 @@ docker tag myapp:1.0.0 123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:1.0.0
 
 ---
 
-## 6. `docker login` & `docker push`: Publishing to Registries
+## 8. `docker login` & `docker push`: Publishing to Registries
 
 Once your image is built and tagged, upload it so Kubernetes clusters or cloud VMs can pull and run it.
 
@@ -400,14 +317,18 @@ docker push kendirck/myapp:latest
 
 ---
 
-## 7. Master Cheat Sheet
+## 9. Master Cheat Sheet
 
 | Step | Command | Description |
 | :--- | :--- | :--- |
 | **Pull** | `docker pull nginx:alpine` | Download image from registry |
 | **Run** | `docker run -d -p 8080:80 -v data:/data --name web nginx:alpine` | Run with ports, volumes, name |
+| **Enter** | `docker exec -it web sh` | Open interactive shell inside running container |
+| **List** | `docker ps` / `docker ps -a` | List running / all containers |
+| **Start / Stop** | `docker start web` / `docker stop web` | Start or stop a container |
+| **Remove** | `docker rm web` | Remove a stopped container |
 | **Build** | `docker build -t myapp:1.0.0 .` | Build local image |
 | **Buildx** | `docker buildx build --platform linux/amd64,linux/arm64 -t user/app:1.0 --push .` | Multi-arch cross-compile |
 | **Tag** | `docker tag myapp:1.0.0 user/myapp:1.0.0` | Alias image with registry name |
-| **Login** | `docker login` / `docker login ghcr.io` | Authenticate to registry |
+| **Login** | `docker login` / `docker login ghcr.io` | Authenticate before pushing to a registry |
 | **Push** | `docker push user/myapp:1.0.0` | Upload image to registry |
