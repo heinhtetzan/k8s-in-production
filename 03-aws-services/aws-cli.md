@@ -186,12 +186,6 @@ Manage virtual servers, instances lifecycle, security groups, and key pairs.
 
 ### 4.1 Launch the Instance
 
-Launch an Ubuntu Server (ARM64) instance in region **`ap-southeast-2`** using AMI **`ami-0be7d1b5b9749d43a`**.
-
-> [!NOTE]
-> `ami-0be7d1b5b9749d43a` is an **ARM64** image. Therefore, use an ARM-based instance type like **`t4g.small`** or **`t4g.micro`**.
-
-#### Quick Launch (Uses Default VPC & Subnet automatically)
 ```bash
 aws ec2 run-instances \
   --region ap-southeast-2 \
@@ -201,78 +195,36 @@ aws ec2 run-instances \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-ubuntu-server}]'
 ```
 
-#### Launch with SSH Key Pair & Security Group (Ready to SSH)
-```bash
-aws ec2 run-instances \
-  --region ap-southeast-2 \
-  --image-id ami-0be7d1b5b9749d43a \
-  --instance-type t4g.small \
-  --key-name hello-aws \
-  --security-group-ids sg-03fa60d8037398646 \
-  --count 1 \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-ubuntu-server}]'
-```
-
-#### Launch with User Data Bootstrap Script (Auto-Install Docker)
-```bash
-aws ec2 run-instances \
-  --region ap-southeast-2 \
-  --image-id ami-0be7d1b5b9749d43a \
-  --instance-type t4g.small \
-  --user-data file://install-docker.sh \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=docker-host}]'
-```
-
 ---
 
-### 4.2 View & Query Instances (`describe-instances`)
-
-Once an instance is launched, verify its state and retrieve its Public IP:
-
-```bash
-# View running instances in ap-southeast-2 (ID, Type, Status, Public IP, Name)
-aws ec2 describe-instances \
-  --region ap-southeast-2 \
-  --filters "Name=instance-state-name,Values=running,pending" \
-  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name,PublicIpAddress,PrivateIpAddress,Tags[?Key=='Name'].Value | [0]]" \
-  --output table
-
-# Find specific instance by tag Name
-aws ec2 describe-instances \
-  --region ap-southeast-2 \
-  --filters "Name=tag:Name,Values=my-ubuntu-server" \
-  --query "Reservations[*].Instances[*].[InstanceId,State.Name,PublicIpAddress]" \
-  --output table
-
-# Get Public IP of a specific instance ID
-aws ec2 describe-instances \
-  --region ap-southeast-2 \
-  --instance-ids i-0123456789abcdef0 \
-  --query "Reservations[0].Instances[0].PublicIpAddress" \
-  --output text
-```
-
----
-
-### 4.3 Instance Lifecycle (`start`, `stop`, `reboot`, `terminate`)
+### 4.2 Instance Lifecycle (`start`, `stop`, `reboot`, `terminate`)
 
 ```bash
 # Stop a running instance (halts compute charges; EBS storage charges still apply)
-aws ec2 stop-instances --instance-ids i-0123456789abcdef0
+aws ec2 stop-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
 
 # Start a stopped instance
-aws ec2 start-instances --instance-ids i-0123456789abcdef0
+aws ec2 start-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
 
 # Reboot an instance
-aws ec2 reboot-instances --instance-ids i-0123456789abcdef0
+aws ec2 reboot-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
 
-# Terminate (Permanently delete) an instance
-aws ec2 terminate-instances --instance-ids i-0123456789abcdef0
+# Terminate (Permanently delete) an instance by ID
+aws ec2 terminate-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
+
+# Terminate an instance directly by its Name tag (One-Liner)
+aws ec2 terminate-instances \
+  --region ap-southeast-2 \
+  --instance-ids $(aws ec2 describe-instances \
+    --region ap-southeast-2 \
+    --filters "Name=tag:Name,Values=my-ubuntu-server" "Name=instance-state-name,Values=running,stopped" \
+    --query "Reservations[].Instances[].InstanceId" \
+    --output text)
 ```
 
 ---
 
-### 4.4 Security Groups & Key Pairs
+### 4.3 Security Groups & Key Pairs
 
 ```bash
 # Create a Security Group
