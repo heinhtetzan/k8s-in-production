@@ -184,15 +184,164 @@ Manage virtual servers, instances lifecycle, security groups, and key pairs.
 
 ---
 
-### 4.1 Launch the Instance
+### 4.1 Step-by-Step: Production EC2 Setup (VPC → SG → Key → EC2)
+
+A complete, production-ready walkthrough creating a custom VPC, Public Subnet, Internet Gateway, Security Group, SSH Key, and launching an Ubuntu instance.
+
+Set your target region:
+```bash
+export AWS_REGION="ap-southeast-2"
+```
+
+---
+
+#### Step 1: Create VPC & Public Networking
 
 ```bash
-aws ec2 run-instances \
-  --region ap-southeast-2 \
+# 1. Create a custom VPC (10.0.0.0/16)
+VPC_ID=$(aws ec2 create-vpc \
+  --region $AWS_REGION \
+  --cidr-block 10.0.0.0/16 \
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=my-app-vpc}]' \
+  --query "Vpc.VpcId" \
+  --output text)
+echo "Created VPC: $VPC_ID"
+
+# 2. Create an Internet Gateway (IGW) and attach it to your VPC
+IGW_ID=$(aws ec2 create-internet-gateway \
+  --region $AWS_REGION \
+  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=my-app-igw}]' \
+  --query "InternetGateway.InternetGatewayId" \
+  --output text)
+
+aws ec2 attach-internet-gateway \
+  --region $AWS_REGION \
+  --vpc-id $VPC_ID \
+  --internet-gateway-id $IGW_ID
+
+# 3. Create a Public Subnet (10.0.1.0/24) in Availability Zone A
+SUBNET_ID=$(aws ec2 create-subnet \
+  --region $AWS_REGION \
+  --vpc-id $VPC_ID \
+  --cidr-block 10.0.1.0/24 \
+  --availability-zone "${AWS_REGION}a" \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=my-public-subnet}]' \
+  --query "Subnet.SubnetId" \
+  --output text)
+
+# Enable automatic Public IP assignment on instances in this subnet
+aws ec2 modify-subnet-attribute \
+  --region $AWS_REGION \
+  --subnet-id $SUBNET_ID \
+  --map-public-ip-on-launch
+
+# 4. Create a Route Table and route all internet traffic (0.0.0.0/0) to the IGW
+ROUTE_TABLE_ID=$(aws ec2 create-route-table \
+  --region $AWS_REGION \
+  --vpc-id $VPC_ID \
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=my-public-rt}]' \
+  --query "RouteTable.RouteTableId" \
+  --output text)
+
+aws ec2 create-route \
+  --region $AWS_REGION \
+  --route-table-id $ROUTE_TABLE_ID \
+  --destination-cidr-block 0.0.0.0/0 \
+  --gateway-id $IGW_ID
+
+# Associate the Route Table with your Public Subnet
+aws ec2 associate-route-table \
+  --region $AWS_REGION \
+  --subnet-id $SUBNET_ID \
+  --route-table-id $ROUTE_TABLE_ID
+```
+
+---
+
+#### Step 2: Create Security Group & Open Ports
+
+```bash
+# 1. Create Security Group inside your custom VPC
+SG_ID=$(aws ec2 create-security-group \
+  --region $AWS_REGION \
+  --group-name "web-ssh-sg" \
+  --description "Allow SSH (22) and HTTP (80)" \
+  --vpc-id $VPC_ID \
+  --query "GroupId" \
+  --output text)
+echo "Created Security Group: $SG_ID"
+
+# 2. Allow Inbound SSH (Port 22)
+aws ec2 authorize-security-group-ingress \
+  --region $AWS_REGION \
+  --group-id $SG_ID \
+  --protocol tcp \
+  --port 22 \
+  --cidr 0.0.0.0/0
+
+# 3. Allow Inbound HTTP (Port 80)
+aws ec2 authorize-security-group-ingress \
+  --region $AWS_REGION \
+  --group-id $SG_ID \
+  --protocol tcp \
+  --port 80 \
+  --cidr 0.0.0.0/0
+```
+
+---
+
+#### Step 3: Generate SSH Key Pair
+
+```bash
+# 1. Generate Key Pair and save private key locally
+aws ec2 create-key-pair \
+  --region $AWS_REGION \
+  --key-name my-ec2-key \
+  --query "KeyMaterial" \
+  --output text > ~/.ssh/my-ec2-key.pem
+
+# 2. Set read-only permissions (mandatory for SSH)
+chmod 400 ~/.ssh/my-ec2-key.pem
+```
+
+---
+
+#### Step 4: Launch the EC2 Instance
+
+Launch an Ubuntu Server (ARM64) instance using the Subnet, Security Group, and Key Pair created above:
+
+```bash
+INSTANCE_ID=$(aws ec2 run-instances \
+  --region $AWS_REGION \
   --image-id ami-0be7d1b5b9749d43a \
   --instance-type t4g.small \
+  --key-name my-ec2-key \
+  --security-group-ids $SG_ID \
+  --subnet-id $SUBNET_ID \
   --count 1 \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-ubuntu-server}]'
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-production-server}]' \
+  --query "Instances[0].InstanceId" \
+  --output text)
+
+echo "Launched Instance: $INSTANCE_ID"
+```
+
+---
+
+#### Step 5: Connect via SSH
+
+```bash
+# 1. Wait for instance to become running and fetch Public IP
+INSTANCE_IP=$(aws ec2 describe-instances \
+  --region $AWS_REGION \
+  --instance-ids $INSTANCE_ID \
+  --query "Reservations[0].Instances[0].PublicIpAddress" \
+  --output text)
+
+echo "Instance Public IP: $INSTANCE_IP"
+
+# 2. SSH into your instance
+ssh -i ~/.ssh/my-ec2-key.pem ubuntu@$INSTANCE_IP
 ```
 
 ---
@@ -201,59 +350,49 @@ aws ec2 run-instances \
 
 ```bash
 # Stop a running instance (halts compute charges; EBS storage charges still apply)
-aws ec2 stop-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
+aws ec2 stop-instances --region $AWS_REGION --instance-ids $INSTANCE_ID
 
 # Start a stopped instance
-aws ec2 start-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
+aws ec2 start-instances --region $AWS_REGION --instance-ids $INSTANCE_ID
 
 # Reboot an instance
-aws ec2 reboot-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
+aws ec2 reboot-instances --region $AWS_REGION --instance-ids $INSTANCE_ID
 
 # Terminate (Permanently delete) an instance by ID
-aws ec2 terminate-instances --region ap-southeast-2 --instance-ids i-0123456789abcdef0
+aws ec2 terminate-instances --region $AWS_REGION --instance-ids $INSTANCE_ID
 
-# Terminate an instance directly by its Name tag (One-Liner)
+# Terminate an instance directly by its Name tag
 aws ec2 terminate-instances \
-  --region ap-southeast-2 \
+  --region $AWS_REGION \
   --instance-ids $(aws ec2 describe-instances \
-    --region ap-southeast-2 \
-    --filters "Name=tag:Name,Values=my-ubuntu-server" "Name=instance-state-name,Values=running,stopped" \
+    --region $AWS_REGION \
+    --filters "Name=tag:Name,Values=my-production-server" "Name=instance-state-name,Values=running,stopped" \
     --query "Reservations[].Instances[].InstanceId" \
     --output text)
 ```
 
 ---
 
-### 4.3 Security Groups & Key Pairs
+### 4.3 Clean Up / Teardown Networking Resources
+
+When you are done and want to delete the VPC and avoid unused resource clutter:
 
 ```bash
-# Create a Security Group
-aws ec2 create-security-group \
-  --group-name "web-traffic-sg" \
-  --description "Allow inbound HTTP and HTTPS" \
-  --vpc-id vpc-0123456789abcdef0
+# 1. Terminate the instance first and wait until terminated
+aws ec2 terminate-instances --region $AWS_REGION --instance-ids $INSTANCE_ID
+aws ec2 wait instance-terminated --region $AWS_REGION --instance-ids $INSTANCE_ID
 
-# Authorize inbound HTTPS (443) and HTTP (80)
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-0123456789abcdef0 \
-  --protocol tcp \
-  --port 443 \
-  --cidr 0.0.0.0/0
+# 2. Delete Security Group and Key Pair
+aws ec2 delete-security-group --region $AWS_REGION --group-id $SG_ID
+aws ec2 delete-key-pair --region $AWS_REGION --key-name my-ec2-key
+rm -f ~/.ssh/my-ec2-key.pem
 
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-0123456789abcdef0 \
-  --protocol tcp \
-  --port 80 \
-  --cidr 0.0.0.0/0
-
-# Create and download a new SSH Key Pair
-aws ec2 create-key-pair \
-  --key-name my-ssh-key \
-  --query "KeyMaterial" \
-  --output text > ~/.ssh/my-ssh-key.pem
-
-# Set secure permissions on private key
-chmod 400 ~/.ssh/my-ssh-key.pem
+# 3. Disassociate Route Table, Detach IGW, and Delete VPC
+aws ec2 delete-subnet --region $AWS_REGION --subnet-id $SUBNET_ID
+aws ec2 delete-route-table --region $AWS_REGION --route-table-id $ROUTE_TABLE_ID
+aws ec2 detach-internet-gateway --region $AWS_REGION --vpc-id $VPC_ID --internet-gateway-id $IGW_ID
+aws ec2 delete-internet-gateway --region $AWS_REGION --internet-gateway-id $IGW_ID
+aws ec2 delete-vpc --region $AWS_REGION --vpc-id $VPC_ID
 ```
 
 ---
