@@ -82,20 +82,36 @@ aws sts get-caller-identity   # Now running as prod!
 
 ---
 
-### How to Logout & Disconnect
+### How to Check Saved Profiles & Logout
 
-To remove your credentials and ensure no active session remains in your terminal:
+#### View Saved Credentials & Active Profiles
+```bash
+# 1. List all profile names saved on your machine
+aws configure list-profiles
+
+# 2. View current active credentials, profile, and region
+aws configure list
+
+# 3. View all saved Access Keys & Profiles directly
+cat ~/.aws/credentials
+
+# 4. View all saved Regions & Settings directly
+cat ~/.aws/config
+```
+
+#### Logout (Remove Saved Credentials)
+To completely log out and delete stored credentials from your machine:
 
 ```bash
-# Unset all AWS credential variables from terminal session
-unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_PROFILE
+# Remove credentials and config files to log out
+rm -f ~/.aws/credentials ~/.aws/config
 ```
 
 **Confirm you are logged out:**
 ```bash
 aws sts get-caller-identity
 ```
-Output will confirm no active session:
+Output will confirm no active credentials:
 ```text
 Unable to locate credentials. You can configure credentials by running "aws configure".
 ```
