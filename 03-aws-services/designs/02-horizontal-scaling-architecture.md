@@ -7,11 +7,25 @@ A resilient, high-availability multi-tier architecture engineered for production
 ## 🏗️ Architecture Diagram
 
 ```mermaid
-flowchart TD
-    User["🌐 Users & Mobile Clients"] -->|"1. HTTPS Request"| R53["Amazon Route 53<br/>(Latency / Failover DNS)"]
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph TD
+    User(["Users & Mobile Clients"]) -->|"1. HTTPS Request"| R53["Amazon Route 53<br/>(Latency / Failover DNS)"]
     R53 --> CF["Amazon CloudFront (CDN) + AWS WAF<br/>(DDoS Protection & Edge Cache)"]
 
-    CF -->|"Static Assets (Images, CSS, JS)"| S3[("Amazon S3 Bucket<br/>Origin Access Control - OAC")]
+    CF -->|"Static Assets"| S3[("Amazon S3 Bucket<br/>Origin Access Control")]
     CF -->|"Dynamic API / HTML"| IGW["Internet Gateway (IGW)"]
 
     subgraph AWS["AWS Cloud (Region: us-east-1)"]
@@ -46,33 +60,67 @@ flowchart TD
 
             subgraph PrivateDataSubnets["Private Data & Caching Subnets"]
                 subgraph CacheTier["In-Memory Caching"]
-                    ElastiCache[("Amazon ElastiCache<br/>Redis / Valkey Multi-AZ Cluster<br/>Session Store & Query Cache")]
+                    ElastiCache[("Amazon ElastiCache<br/>Redis / Valkey Multi-AZ Cluster")]
                 end
 
                 subgraph DBTier["Database Scaling Tier (Amazon Aurora / RDS)"]
                     DB_Primary[("Aurora / RDS Primary (Writer)<br/>AZ 1a - Multi-AZ Sync")]
                     DB_Replica[("Aurora / RDS Read Replica (Reader)<br/>AZ 1b - Auto-scaling Reads")]
-                    DB_Primary -.->|"Async / Storage Replication"| DB_Replica
+                    DB_Primary -.->|"Async Replication"| DB_Replica
                 end
             end
 
-            EC2_1 & EC2_2 -->|"2. Check Cache First (Sub-ms)"| ElastiCache
+            EC2_1 & EC2_2 -->|"2. Check Cache First"| ElastiCache
             EC2_1 & EC2_2 -->|"3. Writes / Mutates"| DB_Primary
             EC2_1 & EC2_2 -->|"4. Reads / Queries"| DB_Replica
 
             subgraph AsyncQueue["Asynchronous Job & Notification Decoupling"]
                 SQS[("Amazon SQS Queue<br/>Background Jobs + DLQ")]
-                SES["Amazon SES<br/>(Simple Email Service)<br/>Transactional Emails"]
+                SES["Amazon SES<br/>(Simple Email Service)"]
             end
 
-            EC2_1 & EC2_2 -->|"5. Push Heavy Jobs (Reports, Video, Emails)"| SQS
-            SQS -->|"6. Long-Poll Batch Messages"| Worker1 & Worker2
-            Worker1 & Worker2 -->|"7. Send Email / Notifications"| SES
+            EC2_1 & EC2_2 -->|"5. Push Heavy Jobs"| SQS
+            SQS -->|"6. Batch Messages"| Worker1 & Worker2
+            Worker1 & Worker2 -->|"7. Send Email"| SES
         end
 
         CW["Amazon CloudWatch<br/>Metrics, Logs & Alarms"]
         CW -.->|"Trigger Scale Out / In"| ASG
     end
+
+    %% Container Boundaries: Transparent BG with Muted Dashed and Dotted Strokes
+    style AWS fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    style VPC fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 4 4,color:#e2e8f0;
+    style PublicSubnets fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+    style PubAZ1,PubAZ2 fill:none,stroke:#334155,stroke-width:1px,color:#94a3b8;
+    style PrivateAppSubnets fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+    style AppAZ1,AppAZ2 fill:none,stroke:#334155,stroke-width:1px,color:#94a3b8;
+    style PrivateDataSubnets,CacheTier,DBTier,AsyncQueue fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+
+    %% Component Classes
+    classDef cUser fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#e2e8f0;
+    classDef cR53 fill:#241b16,stroke:#8a5832,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCF fill:#1c1b2b,stroke:#58518e,stroke-width:1.5px,color:#e2e8f0;
+    classDef cNet fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCompute fill:#152226,stroke:#346a78,stroke-width:1.5px,color:#e2e8f0;
+    classDef cWorker fill:#202315,stroke:#5f6d35,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCache fill:#261616,stroke:#853d3d,stroke-width:1.5px,color:#e2e8f0;
+    classDef cDB fill:#161f28,stroke:#325f85,stroke-width:1.5px,color:#e2e8f0;
+    classDef cMsg fill:#261824,stroke:#853878,stroke-width:1.5px,color:#e2e8f0;
+    classDef cStorage fill:#242015,stroke:#7d6830,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCW fill:#1c2420,stroke:#3a7357,stroke-width:1.5px,color:#e2e8f0;
+
+    class User cUser;
+    class R53 cR53;
+    class CF cCF;
+    class S3 cStorage;
+    class IGW,NAT1,NAT2,ALB cNet;
+    class EC2_1,EC2_2,ASG cCompute;
+    class Worker1,Worker2 cWorker;
+    class ElastiCache cCache;
+    class DB_Primary,DB_Replica cDB;
+    class SQS,SES cMsg;
+    class CW cCW;
 ```
 
 ---
@@ -99,7 +147,26 @@ flowchart TD
 Implements the **Cache-Aside (Lazy Loading)** architectural pattern:
 
 ```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'actorBkg': '#1e293b',
+    'actorBorder': '#475569',
+    'actorTextColor': '#e2e8f0',
+    'signalColor': '#526071',
+    'signalTextColor': '#cbd5e1',
+    'labelBoxBkgColor': '#1e293b',
+    'labelBoxBorderColor': '#475569',
+    'labelTextColor': '#e2e8f0',
+    'noteBkgColor': '#1e293b',
+    'noteBorderColor': '#475569',
+    'noteTextColor': '#cbd5e1'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .note rect { stroke-width: 1.5px !important; }'
+}}%%
 sequenceDiagram
+    autonumber
     participant App as EC2 Application
     participant Cache as ElastiCache (Redis)
     participant DB as RDS / Aurora Read Replica
@@ -111,7 +178,7 @@ sequenceDiagram
         Cache-->>App: Key not found (nil)
         App->>DB: 2. SQL Query user profile
         DB-->>App: Return data row
-        App->>Cache: 3. SET key with TTL (e.g., 3600s)
+        App->>Cache: 3. SET key with TTL (e.g. 3600s)
     end
 ```
 

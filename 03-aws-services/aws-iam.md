@@ -295,6 +295,24 @@ In Amazon EKS, **IAM authenticates the user**, while **Kubernetes RBAC controls 
 ### How IAM Authenticates with Kubernetes
 
 ```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'actorBkg': '#1e293b',
+    'actorBorder': '#475569',
+    'actorTextColor': '#e2e8f0',
+    'signalColor': '#526071',
+    'signalTextColor': '#cbd5e1',
+    'labelBoxBkgColor': '#1e293b',
+    'labelBoxBorderColor': '#475569',
+    'labelTextColor': '#e2e8f0',
+    'noteBkgColor': '#1e293b',
+    'noteBorderColor': '#475569',
+    'noteTextColor': '#cbd5e1'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .note rect { stroke-width: 1.5px !important; }'
+}}%%
 sequenceDiagram
     autonumber
     actor Dev as Developer / CI Runner

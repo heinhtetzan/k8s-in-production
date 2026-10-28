@@ -7,8 +7,22 @@ A classic foundational architecture suitable for minimum viable products (MVPs),
 ## 🏗️ Architecture Diagram
 
 ```mermaid
-flowchart TD
-    Client["🌐 Client / Browser"] -->|"1. DNS Query"| R53["Amazon Route 53 (Authoritative DNS)"]
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph TD
+    Client(["Client / Browser"]) -->|"1. DNS Query"| R53["Amazon Route 53<br/>(Authoritative DNS)"]
     Client -->|"2. HTTPS :443"| IGW["Internet Gateway (IGW)"]
 
     subgraph AWS["AWS Cloud"]
@@ -17,18 +31,43 @@ flowchart TD
 
             subgraph PublicSubnet["Public Subnet (10.0.1.0/24 - AZ-1a)"]
                 Router -->|"3. Route Traffic"| EC2["Amazon EC2 Instance<br/>(Monolith App: Nginx + API)<br/>Elastic IP: 54.x.x.x"]
-                EC2 --- EBS[("Amazon EBS Volume<br/>Root Volume: /dev/xvda")]
+                EC2 --- EBS[("Amazon EBS Volume<br/>Root: /dev/xvda")]
             end
 
             subgraph PrivateSubnet["Private Subnet (10.0.2.0/24 - AZ-1a)"]
-                EC2 -->|"4. SQL Query :5432 / :3306 (Private IP)"| RDS[("Amazon RDS Database<br/>PostgreSQL / MySQL<br/>No Public Access")]
+                EC2 -->|"4. SQL Query :5432 / :3306"| RDS[("Amazon RDS Database<br/>PostgreSQL / MySQL")]
             end
         end
 
-        EC2 -.->|"5. S3 Gateway Endpoint (Read/Write Uploads)"| S3[("Amazon S3 Bucket<br/>Media, Uploads & Backups")]
-        EC2 -.->|"6. Push Logs & Metrics"| CW["Amazon CloudWatch (Logs & Alarms)"]
-        IAM["AWS IAM Role (Instance Profile)"] -.->|"Attach Perms"| EC2
+        EC2 -.->|"5. S3 Gateway Endpoint"| S3[("Amazon S3 Bucket<br/>Media, Uploads & Backups")]
+        EC2 -.->|"6. Push Logs & Metrics"| CW["Amazon CloudWatch<br/>(Logs & Alarms)"]
+        IAM["AWS IAM Role<br/>(Instance Profile)"] -.->|"Attach Perms"| EC2
     end
+
+    %% Container Boundaries: Transparent BG with Muted Dashed and Dotted Strokes
+    style AWS fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    style VPC fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 4 4,color:#e2e8f0;
+    style PublicSubnet fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+    style PrivateSubnet fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+
+    %% Component Classes
+    classDef cClient fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#e2e8f0;
+    classDef cR53 fill:#241b16,stroke:#8a5832,stroke-width:1.5px,color:#e2e8f0;
+    classDef cNet fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#e2e8f0;
+    classDef cEC2 fill:#152226,stroke:#346a78,stroke-width:1.5px,color:#e2e8f0;
+    classDef cStorage fill:#242015,stroke:#7d6830,stroke-width:1.5px,color:#e2e8f0;
+    classDef cRDS fill:#161f28,stroke:#325f85,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCW fill:#1c2420,stroke:#3a7357,stroke-width:1.5px,color:#e2e8f0;
+    classDef cIAM fill:#252115,stroke:#8a7030,stroke-width:1.5px,color:#e2e8f0;
+
+    class Client cClient;
+    class R53 cR53;
+    class IGW,Router cNet;
+    class EC2 cEC2;
+    class EBS,S3 cStorage;
+    class RDS cRDS;
+    class CW cCW;
+    class IAM cIAM;
 ```
 
 ---
