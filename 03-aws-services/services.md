@@ -55,6 +55,7 @@ graph LR
 
     subgraph Compute["Compute & Orchestration Layer"]
         EC2["EC2<br/>(Virtual Servers / Nodes)"]
+        Lightsail["Lightsail<br/>(All-in-One VPS)"]
         EKS["EKS<br/>(Kubernetes Control Plane)"]
         ECS["ECS<br/>(Container Orchestration)"]
         Fargate["AWS Fargate<br/>(Serverless Containers)"]
@@ -86,7 +87,7 @@ graph LR
     classDef cWorker fill:#202315,stroke:#5f6d35,stroke-width:1.5px,color:#e2e8f0;
     classDef cStorage fill:#242015,stroke:#7d6830,stroke-width:1.5px,color:#e2e8f0;
 
-    class EC2,EKS,ECS,Fargate cCompute;
+    class EC2,Lightsail,EKS,ECS,Fargate cCompute;
     class Lambda cWorker;
     class ECR,S3,EBS,EFS cStorage;
 ```
@@ -98,11 +99,25 @@ graph LR
 | Service | Category | Classification | Architecture Role & Summary |
 | :--- | :---: | :---: | :--- |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_Amazon-EC2_48.png" width="32" /> **Amazon EC2** | Compute | 🔵 CORE<br>🟧 **NEW** | **Virtual servers with full OS and kernel control.**<br>• Serves as the compute foundation for self-managed nodes, heavy GPU inference rigs, and custom OS requirements.<br>• 🟧 **NEW (Graviton5)**: Latest ARM-based silicon generation delivering up to 25% higher compute performance and reduced energy consumption compared to Graviton4. |
+| <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_Amazon-Lightsail_48.png" width="32" /> **Amazon Lightsail** | Compute | ⚪ DEPTH | **All-in-one Virtual Private Server (VPS) platform for simple workloads.**<br>• Bundles vCPU, memory, SSD storage, static IP, DNS, and data transfer allowance into a predictable flat-rate monthly cost.<br>• One-click blueprints for popular stacks (WordPress, LAMP, Nginx, Node.js) and managed add-on databases/containers.<br>• Ideal for MVPs, developer sandboxes, CMS sites, or lightweight web apps before scaling into full EC2/VPC architectures (supports VPC Peering). |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_Amazon-Elastic-Container-Service_48.png" width="32" /> **Amazon ECS** | Compute | 🔵 CORE<br>🟧 **NEW** | **AWS-native managed container orchestration.**<br>• Lightweight, deeply integrated with IAM, CloudWatch, and ALB without the management overhead of Kubernetes.<br>• 🟧 **NEW (Faster Scaling)**: 20-second metrics collection with a ~86-second scale-out trigger in official AWS benchmarks. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_AWS-Fargate_48.png" width="32" /> **AWS Fargate** | Compute | 🔵 CORE | **Serverless compute engine for containers.**<br>• Runs containers on both ECS and EKS without provisioning, scaling, or patching EC2 host instances.<br>• Pay solely for requested CPU, memory, and ephemeral storage per pod/task. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_AWS-Lambda_48.png" width="32" /> **AWS Lambda** | Compute | 🔵 CORE<br>🟧 **NEW** | **Serverless, event-driven functions.**<br>• Executes code in response to S3 uploads, SQS messages, API Gateway requests, or EventBridge triggers.<br>• 🟧 **NEW (Durable Functions)**: Stateful, resilient code execution with automatic checkpointing and pause/resume capabilities supporting workflows lasting up to one full year. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_Amazon-Elastic-Kubernetes-Service_48.png" width="32" /> **Amazon EKS** | Compute | ⚪ DEPTH | **Managed upstream Kubernetes on AWS.**<br>• Manages control plane availability, automated version upgrades, VPC CNI native IP pod networking, and IAM Roles for Service Accounts (IRSA / Pod Identity).<br>• Industry standard for multi-cloud, GitOps, microservices, and enterprise production platforms. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_AWS-Elastic-Beanstalk_48.png" width="32" /> **AWS Elastic Beanstalk** | Compute | ⚪ DEPTH<br>🟧 **NEW** | **Managed application deployment PaaS.**<br>• Automatically handles provisioning, load balancing, auto-scaling, and health monitoring from uploaded application code.<br>• 🟧 **NEW (Cluster Mode)**: Enables multiple applications to safely share managed underlying fleet infrastructure to maximize resource utilization. |
+
+<details>
+<summary><b>🔍 Architectural Decision: Amazon Lightsail vs. Amazon EC2 vs. AWS Elastic Beanstalk</b></summary>
+
+| Dimension | Amazon Lightsail | AWS Elastic Beanstalk | Amazon EC2 |
+| :--- | :--- | :--- | :--- |
+| **Primary Target** | Developers, small teams, bloggers, fast MVPs | Developers seeking PaaS automation on AWS | DevOps, Platform Engineers, Enterprise fleets |
+| **Pricing Model** | Predictable, bundled monthly tiers (compute + SSD + transfer) | Free management tier (pay only for underlying EC2, ALB, RDS) | Pay-as-you-go per second/hour (separate EBS, data transfer, IPs) |
+| **VPC & Networking** | Pre-configured, simplified VPC (supports VPC Peering) | Full standard AWS VPC with custom subnets and security groups | Complete control over VPC, subnets, route tables, ENIs, gateways |
+| **Auto Scaling** | Manual scaling or vertical resize (instance snapshot migration) | Automated out-of-the-box (integrated with ASG and ALB) | Full custom Auto Scaling Groups with dynamic/predictive policies |
+| **Ideal Use Cases** | WordPress, small APIs, dev/test sandboxes, monolithic low-traffic sites | Rapid web app deployment (Node.js, Python, Java, Docker) without infra boilerplate | High-traffic microservices, GPU inference, Kubernetes worker nodes, custom kernel |
+
+</details>
 
 ---
 
