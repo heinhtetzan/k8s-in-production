@@ -8,13 +8,36 @@ A comprehensive, production-grade guide covering the three leading Infrastructur
 
 ---
 
+## 📖 Progressive Learning Structure in Every Module
+
+Every module in this directory follows a strict, developer-first **progressive learning structure**:
+
+```text
+1. ⚡ Sample 1: Baseline (Minimal & Working)
+   └── Absolute simplest, 100% executable snippet (typically 3–15 lines).
+       Zero distractions, immediately understandable.
+
+2. 🚀 How to Run & Verify Sample 1
+   └── Copy-paste CLI commands (create/preview/deploy/test/teardown).
+       Verify live resources in under 2 minutes.
+
+3. 🛡️ Adding the "Extra": Enterprise Hardening & Production Topology
+   └── The real-world production engineering:
+       • Multi-AZ VPC networking & subnet routing
+       • KMS customer-managed key rotation & TLS enforcement
+       • IAM least-privilege instance profiles & security group isolation
+       • Architectural Mermaid diagrams adhering to ui.md dark mode standards
+```
+
+---
+
 ## 🗺️ Roadmap & Module Navigator
 
 | Module | Framework | Topic 1: Fundamentals | Topic 2: Storage & Security | Topic 3: 3-Tier Production Stack |
 | :---: | :--- | :--- | :--- | :--- |
-| **01** | **[CloudFormation](01-cloudformation/01-intro.md)** | [01-intro.md](01-cloudformation/01-intro.md)<br>• Architecture & Engine<br>• Template Anatomy<br>• Intrinsic Functions & CLI | [02-s3.md](01-cloudformation/02-s3.md)<br>• Hardened S3 Bucket<br>• KMS Encryption & Rotation<br>• Public Access Block & TLS | [03-ec2-s3-rds.md](01-cloudformation/03-ec2-s3-rds.md)<br>• Custom Multi-AZ VPC<br>• Public EC2 + SSM Agent<br>• Private RDS PostgreSQL |
-| **02** | **[AWS CDK (v2)](02-cdk/01-intro.md)** | [01-intro.md](02-cdk/01-intro.md)<br>• L1/L2/L3 Constructs<br>• Synthesis & Bootstrapping<br>• Assertions Testing | [02-s3.md](02-cdk/02-s3.md)<br>• L2 `s3.Bucket` Construct<br>• Automatic Policy Synthesis<br>• Jest Compliance Tests | [03-ec2-s3-rds.md](02-cdk/03-ec2-s3-rds.md)<br>• L2 `ec2.Vpc` Auto-Subnets<br>• `connections` API Chaining<br>• `bucket.grantReadWrite()` |
-| **03** | **[Pulumi](03-pulumi/01-intro.md)** | [01-intro.md](03-pulumi/01-intro.md)<br>• Deployment Engine & RPC<br>• State & Secrets Encryption<br>• Outputs & `.apply()` Model | [02-s3.md](03-pulumi/02-s3.md)<br>• `@pulumi/aws` V2 Modules<br>• Dynamic JSON Policies<br>• Lifecycle Tiering Rules | [03-ec2-s3-rds.md](03-pulumi/03-ec2-s3-rds.md)<br>• Dynamic AZ Allocation<br>• Secret Password Encryption<br>• Multi-Resource Orchestration |
+| **01** | **[CloudFormation](01-cloudformation/01-intro.md)** | [01-intro.md](01-cloudformation/01-intro.md)<br>• Sample 1 + Run Guide<br>• Template Anatomy & JSON/YAML | [02-s3.md](01-cloudformation/02-s3.md)<br>• Sample 1 + Run Guide<br>• Extra: KMS, TLS, PublicAccessBlock | [03-ec2-s3-rds.md](01-cloudformation/03-ec2-s3-rds.md)<br>• Sample 1 + Run Guide<br>• Extra: Multi-AZ VPC + RDS PostgreSQL |
+| **02** | **[AWS CDK (v2)](02-cdk/01-intro.md)** | [01-intro.md](02-cdk/01-intro.md)<br>• Sample 1 + Run Guide<br>• L1/L2/L3 Constructs & Synth | [02-s3.md](02-cdk/02-s3.md)<br>• Sample 1 + Run Guide<br>• Extra: L2 Bucket, Jest Assertions | [03-ec2-s3-rds.md](02-cdk/03-ec2-s3-rds.md)<br>• Sample 1 + Run Guide<br>• Extra: Auto-Subnets, RDS & IAM Wiring |
+| **03** | **[Pulumi](03-pulumi/01-intro.md)** | [01-intro.md](03-pulumi/01-intro.md)<br>• Sample 1 + Run Guide<br>• State, DAG Engine & gRPC | [02-s3.md](03-pulumi/02-s3.md)<br>• Sample 1 + Run Guide<br>• Extra: Modular V2 Resources & Policies | [03-ec2-s3-rds.md](03-pulumi/03-ec2-s3-rds.md)<br>• Sample 1 + Run Guide<br>• Extra: Secret Encryption, VPC & Database |
 
 ---
 
