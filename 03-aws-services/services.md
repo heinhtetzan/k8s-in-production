@@ -34,33 +34,62 @@ Explore the three detailed end-to-end architecture diagrams illustrating the evo
 High-performance computing runtimes and persistent storage backends powering containerised microservices, Kubernetes clusters, and cloud-native workflows.
 
 ```mermaid
-flowchart LR
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph LR
     subgraph Registry["Container Image Storage"]
-        ECR[("ECR (Docker & OCI Registry)")]
+        ECR[("ECR<br/>(Docker & OCI Registry)")]
     end
 
     subgraph Compute["Compute & Orchestration Layer"]
-        EC2["EC2 (Virtual Servers / Nodes)"]
-        EKS["EKS (Kubernetes Control Plane)"]
-        ECS["ECS (AWS Container Orchestration)"]
-        Fargate["AWS Fargate (Serverless Containers)"]
-        Lambda["Lambda (Event-Driven Functions)"]
+        EC2["EC2<br/>(Virtual Servers / Nodes)"]
+        Lightsail["Lightsail<br/>(All-in-One VPS)"]
+        EKS["EKS<br/>(Kubernetes Control Plane)"]
+        ECS["ECS<br/>(Container Orchestration)"]
+        Fargate["AWS Fargate<br/>(Serverless Containers)"]
+        Lambda["AWS Lambda<br/>(Event-Driven Functions)"]
     end
 
     subgraph Storage["Persistent Storage Layer"]
-        S3[("S3 (Object Store & Vectors)")]
-        EBS[("EBS (Block Volumes - RWO)")]
-        EFS[("EFS (Shared NFS - RWX)")]
+        S3[("S3<br/>(Object Store & Vectors)")]
+        EBS[("EBS<br/>(Block Volumes - RWO)")]
+        EFS[("EFS<br/>(Shared NFS - RWX)")]
     end
 
-    ECR -->|Pulls Container Images| EKS
-    ECR -->|Pulls Container Images| ECS
-    ECR -->|Pulls Container Images| Fargate
-    ECR -->|Pulls Container Images| Lambda
+    ECR -->|Pulls Images| EKS
+    ECR -->|Pulls Images| ECS
+    ECR -->|Pulls Images| Fargate
+    ECR -->|Pulls Images| Lambda
     EC2 --- EBS
     EKS --> Fargate
     EKS --- EFS
     Lambda --> S3
+
+    %% Container Boundaries: Transparent BG with Muted Dashed and Dotted Strokes
+    style Registry fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    style Compute fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    style Storage fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+
+    %% Component Classes
+    classDef cCompute fill:#152226,stroke:#346a78,stroke-width:1.5px,color:#e2e8f0;
+    classDef cWorker fill:#202315,stroke:#5f6d35,stroke-width:1.5px,color:#e2e8f0;
+    classDef cStorage fill:#242015,stroke:#7d6830,stroke-width:1.5px,color:#e2e8f0;
+
+    class EC2,Lightsail,EKS,ECS,Fargate cCompute;
+    class Lambda cWorker;
+    class ECR,S3,EBS,EFS cStorage;
 ```
 
 ---
@@ -70,11 +99,25 @@ flowchart LR
 | Service | Category | Classification | Architecture Role & Summary |
 | :--- | :---: | :---: | :--- |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_Amazon-EC2_48.png" width="32" /> **Amazon EC2** | Compute | 🔵 CORE<br>🟧 **NEW** | **Virtual servers with full OS and kernel control.**<br>• Serves as the compute foundation for self-managed nodes, heavy GPU inference rigs, and custom OS requirements.<br>• 🟧 **NEW (Graviton5)**: Latest ARM-based silicon generation delivering up to 25% higher compute performance and reduced energy consumption compared to Graviton4. |
+| <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_Amazon-Lightsail_48.png" width="32" /> **Amazon Lightsail** | Compute | ⚪ DEPTH | **All-in-one Virtual Private Server (VPS) platform for simple workloads.**<br>• Bundles vCPU, memory, SSD storage, static IP, DNS, and data transfer allowance into a predictable flat-rate monthly cost.<br>• One-click blueprints for popular stacks (WordPress, LAMP, Nginx, Node.js) and managed add-on databases/containers.<br>• Ideal for MVPs, developer sandboxes, CMS sites, or lightweight web apps before scaling into full EC2/VPC architectures (supports VPC Peering). |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_Amazon-Elastic-Container-Service_48.png" width="32" /> **Amazon ECS** | Compute | 🔵 CORE<br>🟧 **NEW** | **AWS-native managed container orchestration.**<br>• Lightweight, deeply integrated with IAM, CloudWatch, and ALB without the management overhead of Kubernetes.<br>• 🟧 **NEW (Faster Scaling)**: 20-second metrics collection with a ~86-second scale-out trigger in official AWS benchmarks. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_AWS-Fargate_48.png" width="32" /> **AWS Fargate** | Compute | 🔵 CORE | **Serverless compute engine for containers.**<br>• Runs containers on both ECS and EKS without provisioning, scaling, or patching EC2 host instances.<br>• Pay solely for requested CPU, memory, and ephemeral storage per pod/task. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_AWS-Lambda_48.png" width="32" /> **AWS Lambda** | Compute | 🔵 CORE<br>🟧 **NEW** | **Serverless, event-driven functions.**<br>• Executes code in response to S3 uploads, SQS messages, API Gateway requests, or EventBridge triggers.<br>• 🟧 **NEW (Durable Functions)**: Stateful, resilient code execution with automatic checkpointing and pause/resume capabilities supporting workflows lasting up to one full year. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_Amazon-Elastic-Kubernetes-Service_48.png" width="32" /> **Amazon EKS** | Compute | ⚪ DEPTH | **Managed upstream Kubernetes on AWS.**<br>• Manages control plane availability, automated version upgrades, VPC CNI native IP pod networking, and IAM Roles for Service Accounts (IRSA / Pod Identity).<br>• Industry standard for multi-cloud, GitOps, microservices, and enterprise production platforms. |
 | <img src="./icons/Architecture-Service-Icons_07312026/Arch_Compute/48/Arch_AWS-Elastic-Beanstalk_48.png" width="32" /> **AWS Elastic Beanstalk** | Compute | ⚪ DEPTH<br>🟧 **NEW** | **Managed application deployment PaaS.**<br>• Automatically handles provisioning, load balancing, auto-scaling, and health monitoring from uploaded application code.<br>• 🟧 **NEW (Cluster Mode)**: Enables multiple applications to safely share managed underlying fleet infrastructure to maximize resource utilization. |
+
+<details>
+<summary><b>🔍 Architectural Decision: Amazon Lightsail vs. Amazon EC2 vs. AWS Elastic Beanstalk</b></summary>
+
+| Dimension | Amazon Lightsail | AWS Elastic Beanstalk | Amazon EC2 |
+| :--- | :--- | :--- | :--- |
+| **Primary Target** | Developers, small teams, bloggers, fast MVPs | Developers seeking PaaS automation on AWS | DevOps, Platform Engineers, Enterprise fleets |
+| **Pricing Model** | Predictable, bundled monthly tiers (compute + SSD + transfer) | Free management tier (pay only for underlying EC2, ALB, RDS) | Pay-as-you-go per second/hour (separate EBS, data transfer, IPs) |
+| **VPC & Networking** | Pre-configured, simplified VPC (supports VPC Peering) | Full standard AWS VPC with custom subnets and security groups | Complete control over VPC, subnets, route tables, ENIs, gateways |
+| **Auto Scaling** | Manual scaling or vertical resize (instance snapshot migration) | Automated out-of-the-box (integrated with ASG and ALB) | Full custom Auto Scaling Groups with dynamic/predictive policies |
+| **Ideal Use Cases** | WordPress, small APIs, dev/test sandboxes, monolithic low-traffic sites | Rapid web app deployment (Node.js, Python, Java, Docker) without infra boilerplate | High-traffic microservices, GPU inference, Kubernetes worker nodes, custom kernel |
+
+</details>
 
 ---
 
@@ -95,22 +138,49 @@ flowchart LR
 > **ENGINEERING RULE**: Design the access pattern before choosing the database. Relational schemas prioritize flexible ad-hoc querying, while NoSQL databases require table schemas designed around specific query access keys.
 
 ```mermaid
-flowchart TD
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph TD
     subgraph MessagingPatterns["Messaging Architectures"]
-        direction TB
         subgraph P2P["SQS: Point-to-Point Queue"]
             Producer1["Publisher"] --> Queue[("SQS Queue")]
             Queue --> Consumer1["Worker 1 (Processes Job)"]
-            Queue -.-> Consumer2["Worker 2 (Only 1 worker gets each message)"]
+            Queue -.-> Consumer2["Worker 2 (Only 1 worker gets message)"]
         end
 
         subgraph FanOut["SNS: Pub/Sub Fan-Out"]
             Producer2["Publisher"] --> Topic(("SNS Topic"))
-            Topic --> Sub1["SQS Queue A (Every subscriber"]
-            Topic --> Sub2["SQS Queue B gets a copy)"]
-            Topic --> Sub3["Lambda Webhook"]
+            Topic --> Sub1["SQS Queue A<br/>(Subscriber 1)"]
+            Topic --> Sub2["SQS Queue B<br/>(Subscriber 2)"]
+            Topic --> Sub3["Lambda Webhook<br/>(Subscriber 3)"]
         end
     end
+
+    %% Container Boundaries: Transparent BG with Muted Dashed and Dotted Strokes
+    style MessagingPatterns fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    style P2P fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+    style FanOut fill:none,stroke:#334155,stroke-width:1px,stroke-dasharray: 2 3,color:#cbd5e1;
+
+    %% Component Classes
+    classDef cClient fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#e2e8f0;
+    classDef cQueue fill:#261824,stroke:#853878,stroke-width:1.5px,color:#e2e8f0;
+    classDef cWorker fill:#202315,stroke:#5f6d35,stroke-width:1.5px,color:#e2e8f0;
+
+    class Producer1,Producer2 cClient;
+    class Queue,Topic,Sub1,Sub2 cQueue;
+    class Consumer1,Consumer2,Sub3 cWorker;
 ```
 
 ---
@@ -144,15 +214,45 @@ flowchart TD
 End-to-end traffic routing, SSL/TLS termination, edge caching, zero-trust identity enforcement, and automated threat defense.
 
 ```mermaid
-flowchart LR
-    User([End User / Client]) --> R53["Route 53 (DNS)"]
-    R53 --> CF["CloudFront (Edge CDN & WAF)"]
-    CF --> ALB["ALB (Layer 7 Load Balancer)"]
-    ALB --> VPC["Private VPC Subnet"]
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph LR
+    User(["End User / Client"]) --> R53["Route 53<br/>(DNS)"]
+    R53 --> CF["CloudFront<br/>(Edge CDN & WAF)"]
+    CF --> ALB["ALB<br/>(Layer 7 Load Balancer)"]
+    ALB --> ComputeCluster
 
-    subgraph VPC["Private VPC Network"]
-        ComputeCluster["Compute (EKS Pods / ECS Tasks / EC2)"]
+    subgraph VPCNetwork["Private VPC Network"]
+        ComputeCluster["Compute Layer<br/>(EKS Pods / ECS Tasks / EC2)"]
     end
+
+    %% Container Boundaries: Transparent BG with Muted Dashed and Dotted Strokes
+    style VPCNetwork fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+
+    %% Component Classes
+    classDef cClient fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#e2e8f0;
+    classDef cR53 fill:#241b16,stroke:#8a5832,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCF fill:#1c1b2b,stroke:#58518e,stroke-width:1.5px,color:#e2e8f0;
+    classDef cNet fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCompute fill:#152226,stroke:#346a78,stroke-width:1.5px,color:#e2e8f0;
+
+    class User cClient;
+    class R53 cR53;
+    class CF cCF;
+    class ALB cNet;
+    class ComputeCluster cCompute;
 ```
 
 ---
@@ -189,15 +289,49 @@ flowchart LR
 Continuous integration, automated deployment pipelines, unified operational telemetry, and declarative infrastructure-as-code automation.
 
 ```mermaid
-flowchart LR
-    Git["Git Source Code"] --> CB["CodeBuild (Build & Test)"]
-    CB --> ECR["ECR (Docker Registry)"]
-    ECR --> CD["CodeDeploy / ArgoCD"]
-    CD --> Runtime["Kubernetes (EKS) / ECS"]
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph LR
+    subgraph CICD["CI/CD Pipeline"]
+        Git["Git Source Code"] --> CB["AWS CodeBuild<br/>(Build & Test)"]
+        CB --> ECR[("Amazon ECR<br/>(Docker Registry)")]
+        ECR --> CD["CodeDeploy / ArgoCD<br/>(GitOps Delivery)"]
+    end
 
-    Runtime -.-> CW["CloudWatch (Metrics & Logs)"]
-    Runtime -.-> XRay["AWS X-Ray (Traces)"]
-    Runtime -.-> CT["CloudTrail (Audit Events)"]
+    CD --> Runtime["Runtime Cluster<br/>(Kubernetes EKS / ECS)"]
+
+    subgraph Observability["Observability & Auditing"]
+        Runtime -.-> CW["Amazon CloudWatch<br/>(Metrics & Logs)"]
+        Runtime -.-> XRay["AWS X-Ray<br/>(Distributed Traces)"]
+        Runtime -.-> CT["AWS CloudTrail<br/>(Audit Events)"]
+    end
+
+    %% Container Boundaries: Transparent BG with Muted Dashed and Dotted Strokes
+    style CICD fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+    style Observability fill:none,stroke:#475569,stroke-width:1.5px,stroke-dasharray: 6 4,color:#e2e8f0;
+
+    %% Component Classes
+    classDef cDev fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#e2e8f0;
+    classDef cStorage fill:#242015,stroke:#7d6830,stroke-width:1.5px,color:#e2e8f0;
+    classDef cCompute fill:#152226,stroke:#346a78,stroke-width:1.5px,color:#e2e8f0;
+    classDef cObs fill:#1c2420,stroke:#3a7357,stroke-width:1.5px,color:#e2e8f0;
+
+    class Git,CB,CD cDev;
+    class ECR cStorage;
+    class Runtime cCompute;
+    class CW,XRay,CT cObs;
 ```
 
 ---
@@ -241,12 +375,35 @@ flowchart LR
 The enterprise Generative AI stack: foundation models, high-performance reasoning APIs, managed RAG retrieval pipelines, and autonomous agent orchestration.
 
 ```mermaid
-flowchart TD
-    UserApp["Application / Client"] --> Agent["Bedrock AgentCore (Multi-step Agent Execution)"]
-    Agent --> Model["Amazon Bedrock / Nova Models"]
-    Agent --> KB["Bedrock Knowledge Bases (RAG Engine)"]
-    KB --> VectorStore[("S3 Vectors / OpenSearch / Aurora pgvector")]
-    Model --> Inference["Nova 2 Lite / Sonic / Act"]
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+graph TD
+    UserApp(["Application / Client"]) --> Agent["Bedrock AgentCore<br/>(Multi-Step Agent Execution)"]
+    Agent --> Model["Amazon Bedrock / Nova<br/>(Foundation Models)"]
+    Agent --> KB["Bedrock Knowledge Bases<br/>(Managed RAG Pipeline)"]
+    KB --> VectorStore[("S3 Vectors / OpenSearch<br/>Aurora pgvector")]
+    Model --> Inference["Nova 2 Lite / Sonic / Act<br/>(Inference Runtimes)"]
+
+    %% Component Classes
+    classDef cClient fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#e2e8f0;
+    classDef cAI fill:#142426,stroke:#2b757e,stroke-width:1.5px,color:#e2e8f0;
+    classDef cStorage fill:#242015,stroke:#7d6830,stroke-width:1.5px,color:#e2e8f0;
+
+    class UserApp cClient;
+    class Agent,Model,KB,Inference cAI;
+    class VectorStore cStorage;
 ```
 
 ---
