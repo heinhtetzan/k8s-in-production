@@ -82,13 +82,14 @@ graph TD
 
 ---
 
-## 📜 CloudFormation Template Anatomy
+## 📜 CloudFormation Template Anatomy (YAML & JSON)
 
-A standard production template is structured into 7 primary top-level blocks:
+A standard production template is structured into 7 primary top-level blocks. Below is the identical infrastructure skeleton in both **YAML** and **JSON**:
 
+### 1. YAML Syntax (`template.yaml`)
 ```yaml
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Standard Production Template Skeleton"
+Description: "Standard Production Template Skeleton in YAML"
 
 # 1. Custom input variables passed at deployment time
 Parameters:
@@ -126,36 +127,104 @@ Outputs:
       Name: !Sub "${AWS::StackName}-BucketArn"
 ```
 
+### 2. JSON Syntax (`template.json`)
+```json
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Standard Production Template Skeleton in JSON",
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Default": "production",
+      "AllowedValues": [
+        "development",
+        "staging",
+        "production"
+      ],
+      "Description": "Deployment target environment"
+    }
+  },
+  "Mappings": {
+    "RegionMap": {
+      "us-east-1": {
+        "AMI": "ami-0c7217cdde317cfec"
+      },
+      "us-west-2": {
+        "AMI": "ami-008fe2fc65e717a2e"
+      }
+    }
+  },
+  "Conditions": {
+    "IsProduction": {
+      "Fn::Equals": [
+        { "Ref": "Environment" },
+        "production"
+      ]
+    }
+  },
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Sub": "company-data-${Environment}-${AWS::AccountId}"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "BucketArn": {
+      "Description": "ARN of the provisioned S3 Bucket",
+      "Value": {
+        "Fn::GetAtt": [
+          "MyBucket",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-BucketArn"
+        }
+      }
+    }
+  }
+}
+```
+
 ---
 
 ## 🛠️ Essential Intrinsic Functions & Pseudo Parameters
 
-CloudFormation evaluates special functions at runtime to resolve dynamic dependencies:
+CloudFormation evaluates special functions at runtime to resolve dynamic dependencies. Notice how YAML uses short bang syntax (e.g. `!Ref`), while JSON uses explicit object keys (e.g. `{"Ref": ...}`):
 
-| Function / Parameter | Syntax | Purpose & Example |
-| :--- | :--- | :--- |
-| `!Ref` | `!Ref ParameterOrResource` | Returns the value of a parameter or physical ID of a resource (`!Ref MyVPC`). |
-| `!GetAtt` | `!GetAtt Resource.Attribute` | Retrieves a specific attribute from a resource (`!GetAtt MyEC2.PrivateIp`). |
-| `!Sub` | `!Sub "prefix-${Variable}"` | String variable interpolation (`!Sub "app-${AWS::Region}"`). |
-| `!Join` | `!Join [":", ["a", "b"]]` | Joins a list of values with a specified delimiter. |
-| `!Select` | `!Select [0, !GetAZs ""]` | Retrieves a single element from an array index. |
-| `!FindInMap` | `!FindInMap [Map, Key, SubKey]` | Resolves values from the `Mappings` block. |
-| `AWS::Region` | `!Ref "AWS::Region"` | Pseudo-parameter resolving to current execution region (e.g. `us-east-1`). |
-| `AWS::AccountId` | `!Ref "AWS::AccountId"` | Current 12-digit AWS Account ID. |
-| `AWS::StackName` | `!Ref "AWS::StackName"` | Name of the active executing CloudFormation stack. |
+| Function / Parameter | YAML Short Syntax | JSON Object Syntax | Purpose & Example |
+| :--- | :--- | :--- | :--- |
+| **`Ref`** | `!Ref MyVPC` | `{"Ref": "MyVPC"}` | Returns the value of a parameter or resource ID |
+| **`Fn::GetAtt`** | `!GetAtt MyEC2.PrivateIp` | `{"Fn::GetAtt": ["MyEC2", "PrivateIp"]}` | Retrieves a specific attribute from a resource |
+| **`Fn::Sub`** | `!Sub "app-${AWS::Region}"` | `{"Fn::Sub": "app-${AWS::Region}"}` | String variable interpolation |
+| **`Fn::Join`** | `!Join [":", ["a", "b"]]` | `{"Fn::Join": [":", ["a", "b"]]}` | Concatenates an array of strings with delimiter |
+| **`Fn::Select`** | `!Select [0, !GetAZs ""]` | `{"Fn::Select": [0, {"Fn::GetAZs": ""}]}` | Retrieves a single element from an array index |
+| **`Fn::FindInMap`** | `!FindInMap [Map, Key, Sub]` | `{"Fn::FindInMap": ["Map", "Key", "Sub"]}` | Resolves values from the `Mappings` block |
+| **`Fn::Base64`** | `!Base64 "string"` | `{"Fn::Base64": "string"}` | Encodes plaintext into Base64 (UserData) |
+| **`AWS::Region`** | `!Ref "AWS::Region"` | `{"Ref": "AWS::Region"}` | Pseudo-parameter resolving to current region |
+| **`AWS::AccountId`** | `!Ref "AWS::AccountId"` | `{"Ref": "AWS::AccountId"}` | Current 12-digit AWS Account ID |
+| **`AWS::StackName`** | `!Ref "AWS::StackName"` | `{"Ref": "AWS::StackName"}` | Name of the active executing stack |
 
 ---
 
 ## 🚀 Lifecycle CLI Commands Cheat Sheet
 
 ```bash
-# 1. Validate template syntax locally
+# 1. Validate template syntax locally (YAML or JSON)
 aws cloudformation validate-template \
   --template-body file://template.yaml
 
+aws cloudformation validate-template \
+  --template-body file://template.json
+
 # 2. Deploy or update a stack with parameters (Recommended: deploy command)
 aws cloudformation deploy \
-  --template-file template.yaml \
+  --template-file template.json \
   --stack-name production-core-infra \
   --parameter-overrides Environment=production \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
