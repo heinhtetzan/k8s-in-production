@@ -66,7 +66,43 @@ graph TD
 
 ---
 
-## ⚖️ IaC Architectural Comparison
+## ⚡ Sample 1: Minimal Working Pulumi Program (Hello World)
+
+Before exploring advanced engine internals, here is the absolute simplest, 100% valid Pulumi TypeScript program. It provisions an S3 bucket in 3 lines:
+
+### TypeScript (`index.ts`)
+```typescript
+import * as aws from "@pulumi/aws";
+
+// 1-line declaration of an Amazon S3 Bucket
+const bucket = new aws.s3.BucketV2("my-first-bucket");
+
+// Export the bucket identifier as a stack output
+export const bucketId = bucket.id;
+```
+
+### 🚀 How to Run & Verify Sample 1
+
+```bash
+# 1. Initialize a new Pulumi AWS TypeScript project
+pulumi new aws-typescript --yes
+
+# 2. Preview planned changes
+pulumi preview
+
+# 3. Deploy to AWS
+pulumi up --yes
+
+# 4. View output
+pulumi stack output bucketId
+
+# 5. Destroy and clean up
+pulumi destroy --yes
+```
+
+---
+
+## ⚖️ Adding the "Extra": IaC Architectural Comparison & Engine Deep Dive
 
 | Dimension | AWS CloudFormation | AWS CDK (v2) | HashiCorp Terraform | Pulumi |
 | :--- | :--- | :--- | :--- | :--- |
