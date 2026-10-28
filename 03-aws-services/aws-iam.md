@@ -2,30 +2,6 @@
 
 A hands-on, practical guide to **AWS Identity and Access Management (IAM)**—from creating users and understanding policy syntax to enforcing least-privilege access for **Amazon S3**, **Amazon EC2**, and **Amazon EKS (Kubernetes)**.
 
----
-
-## 📑 Table of Contents
-1. [Core Concepts: Users, Groups, Roles & Policies](#1-core-concepts-users-groups-roles--policies)
-2. [Step-by-Step: Create a New IAM User](#2-step-by-step-create-a-new-iam-user)
-   - [Method A: Using AWS CLI (Fastest)](#method-a-using-aws-cli-fastest)
-   - [Method B: Using AWS Management Console](#method-b-using-aws-management-console)
-3. [Understanding "All Permissions" (AdministratorAccess)](#3-understanding-all-permissions-administratoraccess)
-   - [Policy Breakdown](#policy-breakdown)
-   - [Root Account vs Administrator IAM User](#root-account-vs-administrator-iam-user)
-4. [Scoped Policy 1: S3 Only Access](#4-scoped-policy-1-s3-only-access)
-   - [Full S3 Access vs Scoped Single Bucket Access](#full-s3-access-vs-scoped-single-bucket-access)
-   - [Production-Grade Single Bucket JSON Policy](#production-grade-single-bucket-json-policy)
-   - [Attach and Test with CLI](#attach-and-test-with-cli)
-5. [Scoped Policy 2: EC2 Only Access](#5-scoped-policy-2-ec2-only-access)
-   - [Full EC2 Access vs Operator (Start/Stop Only)](#full-ec2-access-vs-operator-startstop-only)
-   - [Safe EC2 Operator JSON Policy](#safe-ec2-operator-json-policy)
-   - [Attach and Test with CLI](#attach-and-test-with-cli-1)
-6. [EKS & IAM: Kubernetes Cluster Authentication](#6-eks--iam-kubernetes-cluster-authentication)
-   - [How IAM Authenticates with Kubernetes](#how-iam-authenticates-with-kubernetes)
-   - [Granting a User Access to EKS (Modern Access Entries)](#granting-a-user-access-to-eks-modern-access-entries)
-   - [Cluster Admin vs Read-Only Viewer](#cluster-admin-vs-read-only-viewer)
-   - [Pod-Level Permissions: EKS Pod Identity & IRSA](#pod-level-permissions-eks-pod-identity--irsa)
-7. [📌 IAM Policy Comparison Matrix](#7--iam-policy-comparison-matrix)
 
 ---
 
