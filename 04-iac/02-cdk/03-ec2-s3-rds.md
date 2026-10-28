@@ -8,7 +8,67 @@ This guide demonstrates how to architect and provision a complete production-gra
 
 ---
 
-## 🏗️ CDK Multi-Tier Topology & Security Group Chaining
+## ⚡ Sample 1: Baseline EC2 + S3 Stack (Minimal & Working)
+
+Before managing custom multi-AZ subnets and database clusters, here is the simplest working sample in AWS CDK. It creates an S3 bucket, provisions an EC2 instance in your default VPC, and wires up IAM permissions in a single line of code (`bucket.grantReadWrite(instance)`):
+
+### TypeScript (`lib/simple-ec2-s3-stack.ts`)
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+
+export class SimpleEc2S3Stack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    // 1. Look up existing default VPC
+    const vpc = ec2.Vpc.fromLookup(this, 'DefaultVpc', { isDefault: true });
+
+    // 2. Simple S3 Bucket
+    const bucket = new s3.Bucket(this, 'AppBucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    // 3. Simple Web EC2 Instance (Graviton ARM64)
+    const instance = new ec2.Instance(this, 'SimpleWebInstance', {
+      vpc,
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.NANO),
+      machineImage: ec2.MachineImage.latestAmazonLinux2023({
+        cpuType: ec2.AmazonLinuxCpuType.ARM_64,
+      }),
+    });
+
+    // CDK Grant Helper: Automatically generates and attaches the IAM policy!
+    bucket.grantReadWrite(instance);
+
+    new cdk.CfnOutput(this, 'InstancePublicIp', { value: instance.instancePublicIp });
+    new cdk.CfnOutput(this, 'BucketName', { value: bucket.bucketName });
+  }
+}
+```
+
+### 🚀 How to Run & Verify Sample 1
+
+```bash
+# 1. Preview planned resources
+npx cdk diff SimpleEc2S3Stack
+
+# 2. Deploy sample stack
+npx cdk deploy SimpleEc2S3Stack
+
+# 3. Clean up
+npx cdk destroy SimpleEc2S3Stack
+```
+
+---
+
+## 🏗️ Adding the "Extra": Full 3-Tier Production Architecture (Custom Multi-AZ VPC + Private RDS)
+
+In enterprise production environments, relying on default VPCs is forbidden. Production requires an isolated custom VPC, public DMZ subnets, private isolated database subnets, auto-scaling RDS PostgreSQL, and zero open SSH ports.
+
+Below is the complete 3-tier enterprise architecture:
 
 ```mermaid
 %%{init: {

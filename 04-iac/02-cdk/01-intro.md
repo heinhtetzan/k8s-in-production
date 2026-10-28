@@ -64,7 +64,47 @@ graph TD
 
 ---
 
-## 🧱 The 3 Construct Levels Explained
+## ⚡ Sample 1: Minimal Working CDK Stack (Hello World)
+
+Before diving into complex multi-tier constructs, here is the absolute simplest AWS CDK stack in TypeScript. It creates an S3 bucket in 5 lines of code:
+
+### TypeScript (`lib/minimal-stack.ts`)
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+
+export class MinimalStack extends cdk.Stack {
+  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    // Minimal L2 Construct: creates a fully managed S3 bucket
+    new s3.Bucket(this, 'MyFirstBucket');
+  }
+}
+```
+
+### 🚀 How to Run & Verify Sample 1
+
+```bash
+# 1. Initialize a clean CDK project
+npx cdk init app --language typescript
+
+# 2. Bootstrap your AWS environment (one-time per account/region)
+npx cdk bootstrap
+
+# 3. Preview synthesized CloudFormation
+npx cdk synth
+
+# 4. Deploy stack to AWS
+npx cdk deploy
+
+# 5. Clean up and destroy resources
+npx cdk destroy
+```
+
+---
+
+## 🧱 Adding the "Extra": The 3 Construct Levels Explained
 
 Constructs are the basic building blocks of AWS CDK applications:
 

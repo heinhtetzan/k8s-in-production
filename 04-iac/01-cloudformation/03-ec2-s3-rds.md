@@ -8,7 +8,215 @@ A complete, enterprise-grade Infrastructure as Code blueprint that provisions an
 
 ---
 
-## 🏗️ Architecture Topology
+## ⚡ Sample 1: Baseline EC2 + S3 Stack (Minimal & Working)
+
+Before provisioning a full multi-tier VPC and private RDS database, here is the simplest working sample that launches a web server on Amazon EC2 and grants it secure IAM credentials to read/write to an Amazon S3 bucket without hardcoded keys.
+
+### YAML (`simple-ec2-s3.yaml`)
+```yaml
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Minimal baseline: EC2 instance with IAM role accessing an S3 bucket"
+
+Parameters:
+  LatestAmiId:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+
+Resources:
+  # 1. Simple S3 Storage Bucket
+  AppBucket:
+    Type: "AWS::S3::Bucket"
+
+  # 2. IAM Role granting EC2 access to S3 & SSM Session Manager
+  EC2Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+                Resource:
+                  - !GetAtt AppBucket.Arn
+                  - !Sub "${AppBucket.Arn}/*"
+
+  EC2Profile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles: [!Ref EC2Role]
+
+  # 3. Simple Web Security Group (Port 80)
+  WebSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Allow HTTP port 80"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+
+  # 4. EC2 Web Instance
+  WebServer:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: "t4g.micro"
+      ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref EC2Profile
+      SecurityGroupIds: [!Ref WebSG]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          dnf install -y nginx
+          systemctl enable nginx
+          systemctl start nginx
+          echo "<h1>Sample 1: EC2 + S3 Connected</h1><p>Bucket: ${AppBucket}</p>" > /usr/share/nginx/html/index.html
+
+Outputs:
+  WebPublicIP:
+    Description: "Public IP of Web Server"
+    Value: !GetAtt WebServer.PublicIp
+
+  BucketName:
+    Description: "Created S3 Bucket"
+    Value: !Ref AppBucket
+```
+
+<details>
+<summary><b>📄 Click to view Sample 1 in JSON (<code>simple-ec2-s3.json</code>)</b></summary>
+
+```json
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Minimal baseline: EC2 instance with IAM role accessing an S3 bucket in JSON",
+  "Parameters": {
+    "LatestAmiId": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+    }
+  },
+  "Resources": {
+    "AppBucket": {
+      "Type": "AWS::S3::Bucket"
+    },
+    "EC2Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": "ec2.amazonaws.com" },
+            "Action": "sts:AssumeRole"
+          }]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        ],
+        "Policies": [{
+          "PolicyName": "S3Access",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+              "Resource": [
+                { "Fn::GetAtt": ["AppBucket", "Arn"] },
+                { "Fn::Sub": "${AppBucket.Arn}/*" }
+              ]
+            }]
+          }
+        }]
+      }
+    },
+    "EC2Profile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [{ "Ref": "EC2Role" }]
+      }
+    },
+    "WebSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow HTTP port 80",
+        "SecurityGroupIngress": [{
+          "IpProtocol": "tcp",
+          "FromPort": 80,
+          "ToPort": 80,
+          "CidrIp": "0.0.0.0/0"
+        }]
+      }
+    },
+    "WebServer": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t4g.micro",
+        "ImageId": { "Ref": "LatestAmiId" },
+        "IamInstanceProfile": { "Ref": "EC2Profile" },
+        "SecurityGroupIds": [{ "Ref": "WebSG" }],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": "#!/bin/bash\ndnf install -y nginx\nsystemctl enable nginx\nsystemctl start nginx\necho \"<h1>Sample 1: EC2 + S3 Connected</h1><p>Bucket: ${AppBucket}</p>\" > /usr/share/nginx/html/index.html\n"
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "WebPublicIP": {
+      "Description": "Public IP of Web Server",
+      "Value": { "Fn::GetAtt": ["WebServer", "PublicIp"] }
+    },
+    "BucketName": {
+      "Description": "Created S3 Bucket",
+      "Value": { "Ref": "AppBucket" }
+    }
+  }
+}
+```
+
+</details>
+
+### 🚀 How to Run & Verify Sample 1
+
+```bash
+# 1. Deploy Sample 1 (IAM capability required for instance role)
+aws cloudformation deploy \
+  --template-file simple-ec2-s3.yaml \
+  --stack-name sample-ec2-s3 \
+  --capabilities CAPABILITY_IAM
+
+# 2. Get the Web Server Public IP
+WEB_IP=$(aws cloudformation describe-stacks \
+  --stack-name sample-ec2-s3 \
+  --query "Stacks[0].Outputs[?OutputKey=='WebPublicIP'].OutputValue" \
+  --output text)
+
+# 3. Test HTTP Response
+curl http://$WEB_IP
+
+# 4. Clean up stack
+aws cloudformation delete-stack --stack-name sample-ec2-s3
+```
+
+---
+
+## 🏗️ Adding the "Extra": Full 3-Tier Production Architecture (VPC + Private RDS)
+
+In a genuine production setup, you **cannot** place database instances in default public subnets, and you need a dedicated, isolated Virtual Private Cloud with multi-AZ redundancy.
+
+Below is the complete 3-tier enterprise architecture:
 
 ```mermaid
 %%{init: {

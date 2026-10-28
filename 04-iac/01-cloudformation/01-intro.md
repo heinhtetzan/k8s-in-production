@@ -82,9 +82,52 @@ graph TD
 
 ---
 
-## 📜 CloudFormation Template Anatomy (YAML & JSON)
+## ⚡ Sample 1: The Bare Minimum Working Example (Hello World)
 
-A standard production template is structured into 7 primary top-level blocks. Below is the identical infrastructure skeleton in both **YAML** and **JSON**:
+Before exploring advanced enterprise templates, here is the absolute simplest, 100% valid CloudFormation template that provisions an S3 storage bucket. Only the `Resources` block is strictly required:
+
+### YAML (`sample-minimal.yaml`)
+```yaml
+Resources:
+  MyBucket:
+    Type: "AWS::S3::Bucket"
+```
+
+### JSON (`sample-minimal.json`)
+```json
+{
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket"
+    }
+  }
+}
+```
+
+### 🚀 How to Run & Verify Sample 1
+
+```bash
+# 1. Deploy the minimal stack to AWS
+aws cloudformation deploy \
+  --template-file sample-minimal.yaml \
+  --stack-name my-first-cfn-stack
+
+# 2. Check the physical resource created
+aws cloudformation list-stack-resources \
+  --stack-name my-first-cfn-stack \
+  --query "StackResourceSummaries[*].[LogicalResourceId, PhysicalResourceId, ResourceStatus]" \
+  --output table
+
+# 3. Clean up and delete when done
+aws cloudformation delete-stack \
+  --stack-name my-first-cfn-stack
+```
+
+---
+
+## 🏗️ Adding the "Extra": Full Production Template Anatomy (YAML & JSON)
+
+While Sample 1 works for quick prototypes, production deployments require **Parameters**, **Conditions**, **Mappings**, and **Outputs**. Below is the complete 7-block skeleton:
 
 ### 1. YAML Syntax (`template.yaml`)
 ```yaml
