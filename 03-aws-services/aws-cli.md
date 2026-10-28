@@ -200,7 +200,54 @@ Manage virtual servers, instances lifecycle, security groups, and key pairs.
 
 ---
 
-### 4.1 Step-by-Step: Production EC2 Setup (VPC → SG → Key → EC2)
+### 4.1 Quick & Simple: Launch EC2 in Default VPC (3 Commands)
+
+> **Best for:** Fast testing, sandboxes, and learning. AWS automatically provides a Default VPC, Default Subnets, and a Default Security Group in every region. You **do not** need to create VPCs, subnets, route tables, or internet gateways!
+
+#### 1. Create Key Pair (Saved in Current Folder)
+```bash
+aws ec2 create-key-pair \
+  --key-name my-ec2-key \
+  --query "KeyMaterial" \
+  --output text > ./my-ec2-key.pem && chmod 400 ./my-ec2-key.pem
+```
+
+#### 2. Open SSH (Port 22) on Default Security Group *(Run once per region)*
+```bash
+aws ec2 authorize-security-group-ingress \
+  --group-name default \
+  --protocol tcp \
+  --port 22 \
+  --cidr 0.0.0.0/0
+```
+
+#### 3. Launch EC2 (Default VPC + Subnet + Auto Public IP)
+> **Note:** Leaving out `--subnet-id` and `--security-group-ids` instructs AWS to automatically pick a default subnet in your default VPC, attach the default security group, and assign a public IPv4 address.
+```bash
+aws ec2 run-instances \
+  --image-id ami-0be7d1b5b9749d43a \
+  --instance-type t4g.small \
+  --key-name my-ec2-key \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=my-quick-server}]' \
+  --query "Instances[0].[InstanceId, PublicIpAddress]" \
+  --output table
+```
+
+#### 4. Connect via SSH
+```bash
+# Get Public IP
+INSTANCE_IP=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=my-quick-server" "Name=instance-state-name,Values=running" \
+  --query "Reservations[0].Instances[0].PublicIpAddress" \
+  --output text)
+
+# Connect
+ssh -i ./my-ec2-key.pem ubuntu@$INSTANCE_IP
+```
+
+---
+
+### 4.2 Production EC2 Setup with Custom VPC (VPC → SG → Key → EC2)
 
 A complete, production-ready walkthrough creating a custom VPC, Public Subnet, Internet Gateway, Security Group, SSH Key, and launching an Ubuntu instance.
 
@@ -362,7 +409,7 @@ ssh -i ~/.ssh/my-ec2-key.pem ubuntu@$INSTANCE_IP
 
 ---
 
-### 4.2 Instance Lifecycle (`start`, `stop`, `reboot`, `terminate`)
+### 4.3 Instance Lifecycle (`start`, `stop`, `reboot`, `terminate`)
 
 ```bash
 # Stop a running instance (halts compute charges; EBS storage charges still apply)
@@ -389,7 +436,7 @@ aws ec2 terminate-instances \
 
 ---
 
-### 4.3 Clean Up / Teardown Networking Resources
+### 4.4 Clean Up / Teardown Networking Resources
 
 When you are done and want to delete the VPC and avoid unused resource clutter:
 
@@ -441,21 +488,48 @@ aws rds describe-db-instances \
 
 ### 5.2 Create a Managed Database (`create-db-instance`)
 
+The minimal command requires only the instance name, instance class, engine, storage, master username, password, and subnet group:
+
 ```bash
-# Create a PostgreSQL 16 database instance
+# Add --publicly-accessible if you want to connect directly from your personal computer/DBeaver
 aws rds create-db-instance \
-  --db-instance-identifier prod-postgres-db \
+  --db-instance-identifier my-postgres-db \
   --db-instance-class db.t4g.micro \
   --engine postgres \
-  --engine-version 16.3 \
-  --master-username dbadmin \
-  --master-user-password "SuperSecretPass123!" \
   --allocated-storage 20 \
-  --max-allocated-storage 100 \
-  --storage-type gp3 \
-  --no-publicly-accessible \
-  --vpc-security-group-ids sg-0123456789abcdef0 \
-  --backup-retention-period 7
+  --master-username postgres \
+  --master-user-password 'SuperSecretPass123#' \
+  --db-subnet-group-name default-vpc-subnets \
+  --publicly-accessible
+```
+
+| Parameter | Purpose |
+| :--- | :--- |
+| `--db-instance-identifier` | Name of your database instance in AWS (`my-postgres-db`) |
+| `--db-instance-class` | `db.t4g.micro` is the most cost-effective ARM/Graviton instance |
+| `--engine` | `postgres` (AWS automatically uses the latest stable PostgreSQL release) |
+| `--allocated-storage` | `20` (minimum required storage in GB) |
+| `--master-username` | Master database user (`postgres`) |
+| `--master-user-password` | Master password |
+| `--db-subnet-group-name` | `default-vpc-subnets` (binds database to your default VPC subnets) |
+| `--publicly-accessible` | (Optional) Allows direct connection over the public internet (DBeaver, psql from Mac) |
+
+#### Allow PostgreSQL Inbound (Port 5432) on Default Security Group:
+```bash
+aws ec2 authorize-security-group-ingress \
+  --group-name default \
+  --protocol tcp \
+  --port 5432 \
+  --cidr 0.0.0.0/0 2>/dev/null || true
+```
+
+#### Check Creation Status & Connection Endpoint:
+RDS takes approximately 5–8 minutes to provision:
+```bash
+aws rds describe-db-instances \
+  --db-instance-identifier my-postgres-db \
+  --query "DBInstances[0].[DBInstanceIdentifier, DBInstanceStatus, Endpoint.Address]" \
+  --output table
 ```
 
 ---
@@ -485,26 +559,32 @@ aws rds restore-db-instance-from-db-snapshot \
 ### 5.4 Modify, Stop, Start & Delete Database
 
 ```bash
+# Make an existing database publicly accessible immediately
+aws rds modify-db-instance \
+  --db-instance-identifier my-postgres-db \
+  --publicly-accessible \
+  --apply-immediately
+
 # Stop a database (Saves compute costs in Dev/Staging overnight)
-aws rds stop-db-instance --db-instance-identifier dev-postgres-db
+aws rds stop-db-instance --db-instance-identifier my-postgres-db
 
 # Start a stopped database
-aws rds start-db-instance --db-instance-identifier dev-postgres-db
+aws rds start-db-instance --db-instance-identifier my-postgres-db
 
 # Modify instance class (scale compute up to db.t4g.medium)
 aws rds modify-db-instance \
-  --db-instance-identifier prod-postgres-db \
+  --db-instance-identifier my-postgres-db \
   --db-instance-class db.t4g.medium \
   --apply-immediately
 
 # Delete database with a final backup snapshot
 aws rds delete-db-instance \
-  --db-instance-identifier dev-postgres-db \
-  --final-db-snapshot-identifier dev-postgres-final-snapshot
+  --db-instance-identifier my-postgres-db \
+  --final-db-snapshot-identifier my-postgres-final-snapshot
 
 # Delete database without a final snapshot (Development only!)
 aws rds delete-db-instance \
-  --db-instance-identifier dev-postgres-db \
+  --db-instance-identifier my-postgres-db \
   --skip-final-snapshot
 ```
 
