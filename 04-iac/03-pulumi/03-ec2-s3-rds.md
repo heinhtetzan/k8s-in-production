@@ -8,7 +8,81 @@ A complete, battle-tested Infrastructure as Code blueprint written in **Pulumi T
 
 ---
 
-## 🏗️ Pulumi Multi-Tier Architecture Topology
+## ⚡ Sample 1: Baseline EC2 + S3 Stack in Pulumi (Minimal & Working)
+
+Before building a custom multi-AZ VPC and provisioning private relational databases, here is a simple working Pulumi sample that launches an EC2 web server in your default VPC and provisions an S3 storage bucket:
+
+### TypeScript (`index.ts`)
+```typescript
+import * as aws from "@pulumi/aws";
+
+// 1. Simple S3 Storage Bucket
+const bucket = new aws.s3.BucketV2("sample-app-bucket", {
+  forceDestroy: true, // Allows clean deletion for test environments
+});
+
+// 2. Fetch Default VPC and Subnet
+const defaultVpc = aws.ec2.getVpc({ default: true });
+const defaultSubnet = defaultVpc.then(vpc => 
+  aws.ec2.getSubnetIds({ vpcId: vpc.id })
+).then(subnets => subnets.ids[0]);
+
+// 3. Simple Web Security Group (Port 80)
+const webSg = new aws.ec2.SecurityGroup("simpleWebSg", {
+  ingress: [{ protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"] }],
+  egress: [{ protocol: "-1", fromPort: 0, toPort: 0, cidrBlocks: ["0.0.0.0/0"] }],
+});
+
+// 4. Latest Amazon Linux 2023 ARM64 AMI Lookup
+const al2023Ami = aws.ec2.getAmi({
+  mostRecent: true,
+  owners: ["amazon"],
+  filters: [{ name: "name", values: ["al2023-ami-kernel-default-arm64"] }],
+});
+
+// 5. Baseline EC2 Web Server
+const webServer = new aws.ec2.Instance("simpleWebServer", {
+  instanceType: aws.ec2.InstanceTypes.T4G_Nano,
+  ami: al2023Ami.then(a => a.id),
+  subnetId: defaultSubnet,
+  vpcSecurityGroupId: [webSg.id],
+  associatePublicIpAddress: true,
+  userData: `#!/bin/bash
+dnf install -y nginx
+systemctl enable --now nginx
+echo "<h1>Sample 1: Pulumi EC2 + S3 Online</h1>" > /usr/share/nginx/html/index.html
+`,
+});
+
+// Stack Outputs
+export const publicIp = webServer.publicIp;
+export const bucketId = bucket.id;
+```
+
+### 🚀 How to Run & Verify Sample 1
+
+```bash
+# 1. Preview planned resources
+pulumi preview
+
+# 2. Deploy sample stack
+pulumi up --yes
+
+# 3. Test HTTP response
+SERVER_IP=$(pulumi stack output publicIp)
+curl http://$SERVER_IP
+
+# 4. Clean up and destroy
+pulumi destroy --yes
+```
+
+---
+
+## 🏗️ Adding the "Extra": Full 3-Tier Production Architecture (Custom VPC + Private RDS + Encrypted Secrets)
+
+In production enterprise deployments, workloads cannot run inside the default VPC. You need a dedicated Virtual Private Cloud, isolated private subnets with no internet ingress for the database, and encrypted secret management for database passwords.
+
+Below is the complete 3-tier enterprise architecture:
 
 ```mermaid
 %%{init: {
