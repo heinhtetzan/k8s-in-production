@@ -12,7 +12,7 @@ metadata:
   name: shop-config
   labels:
     app.kubernetes.io/name: shop-config
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     environment: local
 data:
   API_PORT: "8000"

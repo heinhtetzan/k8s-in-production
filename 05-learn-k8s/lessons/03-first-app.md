@@ -41,8 +41,8 @@ In another terminal, request `http://localhost:3000/health` (or use `curl`) and 
 ## 3. Build an image
 
 ```sh
-docker build -t hello-k8s:v1 -f examples/app/Dockerfile examples/app
-kind load docker-image hello-k8s:v1 --name learning
+docker build -t kendrick-shop:v1 -f examples/app/Dockerfile examples/app
+kind load docker-image kendrick-shop:v1 --name learning
 ```
 
 The image is loaded into the local kind node; a remote registry is not needed for this exercise. Keep `imagePullPolicy: IfNotPresent` for this local image.
@@ -82,12 +82,12 @@ kubectl scale deployment/hello-api --replicas=5
 kubectl get pods -l app=hello-api
 ```
 
-Edit `src/index.ts` to return version `2.0.0`, build and load `hello-k8s:v2`, then update the manifest image or run:
+Edit `src/index.ts` to return version `2.0.0`, build and load `kendrick-shop:v2`, then update the manifest image or run:
 
 ```sh
-docker build -t hello-k8s:v2 -f examples/app/Dockerfile examples/app
-kind load docker-image hello-k8s:v2 --name learning
-kubectl set image deployment/hello-api hello-api=hello-k8s:v2
+docker build -t kendrick-shop:v2 -f examples/app/Dockerfile examples/app
+kind load docker-image kendrick-shop:v2 --name learning
+kubectl set image deployment/hello-api hello-api=kendrick-shop:v2
 kubectl rollout status deployment/hello-api
 kubectl rollout undo deployment/hello-api
 ```

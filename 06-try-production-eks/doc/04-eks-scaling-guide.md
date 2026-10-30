@@ -56,7 +56,7 @@ graph TD
 ```
 
 - **Layer 1: Node Scaling (EC2 Instances):** Managed by **Pulumi IaC** via Auto Scaling Group (ASG). Determines the total CPU and RAM capacity available to the cluster.
-- **Layer 2: Pod Scaling (Containers):** Managed by **Kubernetes manifests ([`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks))** or `kubectl`. Determines how many copies of your application are running.
+- **Layer 2: Pod Scaling (Containers):** Managed by **Kubernetes manifests ([`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks))** or `kubectl`. Determines how many copies of your application are running.
 
 > [!CRITICAL]
 > **Max Pods Limit per EC2 Instance Type (The `t3.small` Bottleneck)**  
@@ -72,7 +72,7 @@ graph TD
 
 ### 2.1 Where Node Counts Are Configured
 
-In [index.ts#L133-L136](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L133-L136):
+In [index.ts#L133-L136](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L133-L136):
 
 ```typescript
 // Current Configuration in index.ts:
@@ -173,7 +173,7 @@ kubectl get nodes -w
 
 ### 3.1 Declarative Scaling via Manifests (`k8s/eks/`)
 
-Edit the `replicas` field under `spec` for any deployment in [`k8s/eks/01-api-app.yaml`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks/01-api-app.yaml):
+Edit the `replicas` field under `spec` for any deployment in [`k8s/eks/01-api-app.yaml`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks/01-api-app.yaml):
 
 ```yaml
 # Example: Scale api-app from 2 to 4 replicas
@@ -228,7 +228,7 @@ kubectl top nodes
 kubectl top pods
 ```
 
-### Production HPA Manifest ([`k8s/eks/04-hpa.yaml`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks/04-hpa.yaml))
+### Production HPA Manifest ([`k8s/eks/04-hpa.yaml`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks/04-hpa.yaml))
 
 The production HPA manifest defines autoscaling for all 3 applications:
 - **`api-app-hpa`:** Min 2, Max 6 replicas (scales when CPU > 70% or Memory > 80%)
@@ -394,10 +394,10 @@ kubectl uncordon <NODE_NAME>
 
 | Action | Target | Tool | Command / File | Speed |
 | :--- | :--- | :--- | :--- | :--- |
-| **Scale Pods (Declarative)** | Application Replicas | Git / YAML | Edit `replicas:` in [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks) $\rightarrow$ `kubectl apply -k k8s/eks` | ~5–15 seconds |
+| **Scale Pods (Declarative)** | Application Replicas | Git / YAML | Edit `replicas:` in [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks) $\rightarrow$ `kubectl apply -k k8s/eks` | ~5–15 seconds |
 | **Scale Pods (Instant)** | Application Replicas | CLI | `kubectl scale deployment/api-app --replicas=N` | ~2–5 seconds |
 | **Auto-Scale Pods** | Application Replicas | HPA | Kubernetes HPA (scales on CPU/RAM %) | Automatic |
-| **Scale Nodes (IaC)** | EC2 Worker Instances | Pulumi | Edit `desiredCapacity` in [index.ts](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts) $\rightarrow$ `pulumi up` | ~2–3 minutes |
+| **Scale Nodes (IaC)** | EC2 Worker Instances | Pulumi | Edit `desiredCapacity` in [index.ts](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts) $\rightarrow$ `pulumi up` | ~2–3 minutes |
 | **Scale Nodes (Dynamic)** | EC2 Worker Instances | Pulumi Config | `pulumi config set desiredNodes N && pulumi up` | ~2–3 minutes |
 | **Emergency Node Scale** | EC2 Worker Instances | AWS CLI | `aws autoscaling set-desired-capacity ...` | ~1–2 minutes |
-| **Upgrade Node Size** | Instance Type | Pulumi | Change `instanceType: "t3.medium"` in [index.ts](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts) $\rightarrow$ `pulumi up` | Rolling replacement |
+| **Upgrade Node Size** | Instance Type | Pulumi | Change `instanceType: "t3.medium"` in [index.ts](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts) $\rightarrow$ `pulumi up` | Rolling replacement |

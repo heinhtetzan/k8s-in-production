@@ -1,6 +1,6 @@
-# AWS EKS & RDS Infrastructure (hello-k8s)
+# AWS EKS & RDS Infrastructure (kendrick-shop)
 
-Provisions the complete cloud infrastructure required to run the `hello-k8s` full-stack application on AWS (Hono + Bun Backend, TanStack Start Frontend, and AWS RDS PostgreSQL 16) with Route 53 custom domain support and SSL.
+Provisions the complete cloud infrastructure required to run the `kendrick-shop` full-stack application on AWS (Hono + Bun Backend, TanStack Start Frontend, and AWS RDS PostgreSQL 16) with Route 53 custom domain support and SSL.
 
 ---
 
@@ -51,7 +51,7 @@ curl -X POST http://localhost:9000/seed
 - **Shop Admin Dashboard**: [http://localhost:9002](http://localhost:9002) *(Admin: `shop@kendrickdev.shop` / `admin123`)*
 - **API Health Check**: [http://localhost:9000/health](http://localhost:9000/health)
 - **Interactive Swagger Docs**: [http://localhost:9000/docs](http://localhost:9000/docs)
-- **PostgreSQL Database**: `localhost:5432` (`shop` / `shop` / `shop_local_secret_2026`)
+- **PostgreSQL Database**: `localhost:5432` (`shop` / `shop` / `asdffdsa` or as configured in `.env`)
 
 ### Run Automated Tests & Typechecks
 ```bash
@@ -367,6 +367,10 @@ A wildcard certificate for `kendrickdev.shop` and `*.kendrickdev.shop` is active
   aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com
   ```
 
+### 8. `EXDEV: cross-device link not permitted, rename '/app/.tanstack/tmp/...' -> '/app/src/routeTree.gen.ts'`
+- **Cause**: In Docker Compose, mounting `/app/.tanstack` as an anonymous volume mounts a distinct filesystem from `/app`. The TanStack Router route generator cannot atomically rename temporary files across different filesystem mount points.
+- **Fix**: Keep `.tanstack` directly within the bind-mounted `/app` workspace without a separate volume in `docker-compose.yaml` (it is already ignored via `.gitignore`).
+
 ---
 
 ## 🧹 Complete Tear-Down / Destroy Order
@@ -381,9 +385,9 @@ kubectl delete -k k8s/eks
 pulumi destroy --yes
 
 # Step 3: (Optional) Delete ECR Repositories
-aws ecr delete-repository --repository-name api-app --region ap-southeast-2 --force
-aws ecr delete-repository --repository-name shop-app --region ap-southeast-2 --force
-aws ecr delete-repository --repository-name shop-dashboard --region ap-southeast-2 --force
+aws ecr delete-repository --repository-name kendrick-shop-api --region ap-southeast-2 --force
+aws ecr delete-repository --repository-name kendrick-shop-app --region ap-southeast-2 --force
+aws ecr delete-repository --repository-name kendrick-shop-dashboard --region ap-southeast-2 --force
 ```
 
 ---

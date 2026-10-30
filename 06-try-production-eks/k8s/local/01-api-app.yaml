@@ -11,7 +11,7 @@ metadata:
   labels:
     app: api-app
     app.kubernetes.io/name: api-app
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     app.kubernetes.io/component: backend
     environment: local
 spec:
@@ -79,7 +79,7 @@ metadata:
   labels:
     app: api-app
     app.kubernetes.io/name: api-app
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     environment: local
 spec:
   type: LoadBalancer

@@ -10,7 +10,7 @@ metadata:
   name: postgres-secret
   labels:
     app.kubernetes.io/name: postgres-secret
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     environment: local
 type: Opaque
 stringData:
@@ -26,7 +26,7 @@ metadata:
   labels:
     app: postgres
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     app.kubernetes.io/component: database
     environment: local
 spec:
@@ -93,7 +93,7 @@ metadata:
   labels:
     app: postgres
     app.kubernetes.io/name: postgres-service
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     environment: local
 spec:
   type: ClusterIP

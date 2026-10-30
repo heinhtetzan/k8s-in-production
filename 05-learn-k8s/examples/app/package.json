@@ -1,7 +1,11 @@
 {
-  "name": "hello-k8s",
+  "name": "kendrick-shop",
   "version": "1.0.0",
   "type": "module",
-  "scripts": { "start": "bun run src/index.ts" },
-  "dependencies": { "hono": "^4.6.0" }
+  "scripts": {
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  }
 }

@@ -11,7 +11,7 @@ metadata:
   labels:
     app: shop-app
     app.kubernetes.io/name: shop-app
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     app.kubernetes.io/component: storefront
     environment: local
 spec:
@@ -74,7 +74,7 @@ metadata:
   labels:
     app: shop-app
     app.kubernetes.io/name: shop-app
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     environment: local
 spec:
   type: LoadBalancer

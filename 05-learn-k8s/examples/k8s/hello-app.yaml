@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: hello-api
-          image: hello-k8s:v1
+          image: kendrick-shop:v1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

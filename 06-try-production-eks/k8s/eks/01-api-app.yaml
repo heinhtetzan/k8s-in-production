@@ -14,7 +14,7 @@ metadata:
   labels:
     app: api-app
     app.kubernetes.io/name: api-app
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
     app.kubernetes.io/component: backend
 spec:
   # Initial baseline replicas. When HPA (04-hpa.yaml) is active,
@@ -96,7 +96,7 @@ metadata:
   labels:
     app: api-app
     app.kubernetes.io/name: api-app
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-southeast-2:542601847638:certificate/ca4e8033-f63c-461f-867d-96ab9cb887fc"
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
