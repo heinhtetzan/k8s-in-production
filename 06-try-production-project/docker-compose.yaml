@@ -1,0 +1,101 @@
+services:
+  # ==========================================
+  # PostgreSQL Database (Local Dev)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: shop-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # API Service (Hono + Bun) - Port 9000
+  # ==========================================
+  api:
+    build:
+      context: ./api-app
+      dockerfile: Dockerfile
+      target: dev
+    container_name: api-app-dev
+    ports:
+      - "${API_PORT:-9000}:${API_PORT:-9000}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${API_PORT:-9000}
+    volumes:
+      # Mount host source code into container for instant hot-reload
+      - ./api-app:/app
+      # Preserve container node_modules (prevents overriding with host files)
+      - /app/node_modules
+    command: sh -c "bun install && bun run dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ==========================================
+  # Shop Service (TanStack Start + Vite) - Port 9001
+  # ==========================================
+  shop:
+    build:
+      context: ./shop-app
+      dockerfile: Dockerfile
+      target: dev
+    container_name: shop-app-dev
+    ports:
+      - "${SHOP_PORT:-9001}:${SHOP_PORT:-9001}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${SHOP_PORT:-9001}
+    volumes:
+      # Mount host source code into container for instant Vite HMR
+      - ./shop-app:/app
+      # Preserve container-specific build and dependency directories
+      - /app/node_modules
+      - /app/.tanstack
+    command: sh -c "bun install && bun run dev"
+    depends_on:
+      - api
+
+  # ==========================================
+  # Dashboard Service (TanStack Start + Vite) - Port 9002
+  # ==========================================
+  dashboard:
+    build:
+      context: ./shop-dashboard
+      dockerfile: Dockerfile
+      target: dev
+    container_name: shop-dashboard-dev
+    ports:
+      - "${DASHBOARD_PORT:-9002}:${DASHBOARD_PORT:-9002}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${DASHBOARD_PORT:-9002}
+    volumes:
+      # Mount host source code into container for instant Vite HMR
+      - ./shop-dashboard:/app
+      # Preserve container-specific build and dependency directories
+      - /app/node_modules
+      - /app/.tanstack
+    command: sh -c "bun install && bun run dev"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

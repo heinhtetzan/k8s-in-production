@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#fb923c" />
+    </linearGradient>
+    <linearGradient id="bgGradAdmin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+  </defs>
+  <!-- Background rounded squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGradAdmin)" />
+  <rect width="62" height="62" x="1" y="1" rx="15" stroke="url(#shieldGrad)" stroke-width="1.5" stroke-opacity="0.6" />
+
+  <!-- Shield Shape -->
+  <path d="M32 10L47 16.5V28C47 38.5 40.5 47.8 32 51C23.5 47.8 17 38.5 17 28V16.5L32 10Z" fill="url(#shieldGrad)" fill-opacity="0.25" stroke="url(#shieldGrad)" stroke-width="2.5" stroke-linejoin="round" />
+
+  <!-- High-Energy Lightning Bolt in Center -->
+  <path d="M34 19L24 33H33L30 45L40 31H31L34 19Z" fill="url(#boltGrad)" />
+</svg>

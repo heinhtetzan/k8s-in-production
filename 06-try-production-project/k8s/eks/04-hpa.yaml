@@ -1,0 +1,162 @@
+# ==============================================================================
+# 04. Horizontal Pod Autoscaler (HPA)
+# ==============================================================================
+# Automatically scales pod replicas up or down based on real-time CPU & Memory.
+#
+# PREREQUISITE:
+# Metrics Server must be running on your EKS cluster so Kubernetes can query
+# pod resource utilization. If not yet installed, run:
+#
+#   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+#
+# VERIFY METRICS:
+#   kubectl top nodes
+#   kubectl top pods
+#
+# CAPACITY NOTE FOR 2x t3.small WORKER NODES:
+# - AWS VPC CNI enforces a strict ceiling of 11 pods per t3.small node (22 total pods).
+# - 6 pods are reserved for system daemons (CoreDNS x2, aws-node x2, kube-proxy x2).
+# - 16 pods maximum remain for your workloads.
+# - Setting maxReplicas: 5 for api-app and 5 for shop-app (plus 1 dashboard) = 11 pods max,
+#   ensuring pods will NEVER become stuck in 'Pending' due to IP exhaustion on t3.small.
+# ==============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-app-hpa
+  labels:
+    app: api-app
+    app.kubernetes.io/name: api-app-hpa
+    app.kubernetes.io/part-of: hello-k8s
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-app
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Scales up when average CPU across all api pods exceeds 70% of 100m (70m)
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          # Scales up when average memory exceeds 80% of 128Mi (~102Mi)
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      # 5-minute cool-down window to prevent rapid pod thrashing/flapping
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: shop-app-hpa
+  labels:
+    app: shop-app
+    app.kubernetes.io/name: shop-app-hpa
+    app.kubernetes.io/part-of: hello-k8s
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: shop-app
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 2
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: shop-dashboard-hpa
+  labels:
+    app: shop-dashboard
+    app.kubernetes.io/name: shop-dashboard-hpa
+    app.kubernetes.io/part-of: hello-k8s
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: shop-dashboard
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 1
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60

@@ -1,0 +1,106 @@
+# ==============================================================================
+# 00. Local PostgreSQL Database (Deployment, Service & Secret)
+# ==============================================================================
+# Runs an in-cluster PostgreSQL 16 instance for local Docker Desktop / Kind.
+# (On AWS EKS, this is replaced by managed AWS RDS PostgreSQL).
+# ==============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  labels:
+    app.kubernetes.io/name: postgres-secret
+    app.kubernetes.io/part-of: hello-k8s
+    environment: local
+type: Opaque
+stringData:
+  POSTGRES_DB: "shop"
+  POSTGRES_USER: "shop"
+  POSTGRES_PASSWORD: "password123"
+  DATABASE_URL: "postgres://shop:password123@postgres-service:5432/shop"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/component: database
+    environment: local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "shop", "-d", "shop"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "shop", "-d", "shop"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  labels:
+    app: postgres
+    app.kubernetes.io/name: postgres-service
+    app.kubernetes.io/part-of: hello-k8s
+    environment: local
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      protocol: TCP
+      port: 5432
+      targetPort: 5432

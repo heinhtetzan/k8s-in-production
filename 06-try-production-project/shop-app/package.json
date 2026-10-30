@@ -1,0 +1,69 @@
+{
+  "name": "shop-app",
+  "version": "1.0.0",
+  "description": "Modern E-Commerce Storefront built with React 19, TanStack Start & Router, and Tailwind CSS",
+  "author": "Kendrick Dev",
+  "license": "MIT",
+  "keywords": [
+    "ecommerce",
+    "react19",
+    "tanstack-router",
+    "storefront",
+    "tailwind"
+  ],
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "dev": "vite dev --host --port 9001",
+    "generate-routes": "tsr generate",
+    "build": "vite build",
+    "preview": "vite preview --host --port 9001",
+    "start": "bun serve.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/oxanium": "^5.3.0",
+    "@remixicon/react": "^4.9.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/react-devtools": "0.10.13",
+    "@tanstack/react-query": "5.104.2",
+    "@tanstack/react-query-devtools": "5.104.2",
+    "@tanstack/react-router": "1.170.42",
+    "@tanstack/react-router-devtools": "1.167.2",
+    "@tanstack/react-router-ssr-query": "1.167.3",
+    "@tanstack/react-start": "1.168.61",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.4.0",
+    "lucide-react": "^0.577.0",
+    "radix-ui": "^1.8.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "shadcn": "^4.21.4",
+    "tailwind-merge": "^3.0.2",
+    "tailwindcss": "^4.1.18",
+    "tw-animate-css": "^1.3.6"
+  },
+  "devDependencies": {
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tanstack/devtools-vite": "0.8.5",
+    "@tanstack/router-cli": "^1.132.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "lightningcss"
+    ]
+  }
+}

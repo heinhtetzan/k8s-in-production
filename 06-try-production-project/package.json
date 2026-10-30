@@ -1,0 +1,19 @@
+{
+    "name": "infra",
+    "main": "index.ts",
+    "scripts": {
+        "backup": "bun run backup:all",
+        "backup:db": "./scripts/backup-db.sh",
+        "backup:s3": "./scripts/backup-s3.sh",
+        "backup:all": "./scripts/backup-db.sh && ./scripts/backup-s3.sh"
+    },
+    "devDependencies": {
+        "@types/node": "^18",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@pulumi/aws": "^7.0.0",
+        "@pulumi/eks": "^4.4.0",
+        "@pulumi/pulumi": "^3.113.0"
+    }
+}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+  </defs>
+  <!-- Background squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
+  <rect width="62" height="62" x="1" y="1" rx="15" stroke="url(#bagGrad)" stroke-width="1.5" stroke-opacity="0.6" />
+  
+  <!-- Shopping Bag Handle -->
+  <path d="M24 23V18C24 13.58 27.58 10 32 10C36.42 10 40 13.58 40 18V23" stroke="url(#bagGrad)" stroke-width="3.5" stroke-linecap="round" />
+  
+  <!-- Shopping Bag Body -->
+  <path d="M16 22H48L44.5 50C44.2 52.2 42.3 54 40.1 54H23.9C21.7 54 19.8 52.2 19.5 50L16 22Z" fill="url(#bagGrad)" />
+  
+  <!-- Accent Checkmark / Star in center -->
+  <path d="M27 34L31 38L37 30" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

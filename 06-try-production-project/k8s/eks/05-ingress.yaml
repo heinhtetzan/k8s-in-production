@@ -1,0 +1,86 @@
+# ==============================================================================
+# 05. AWS Application Load Balancer (ALB) Ingress
+# ==============================================================================
+# Architecture role:
+# - Replaces 3 expensive Classic Load Balancers with ONE single AWS ALB.
+# - Reduces AWS Load Balancer costs from ~$60/month to ~$20/month.
+# - Terminates the Wildcard SSL Certificate (*.kendrickdev.shop) in ACM.
+# - Automatically redirects HTTP (port 80) to HTTPS (port 443).
+# - Routes traffic dynamically based on the requested Host header:
+#     * kendrickdev.shop & www.kendrickdev.shop -> shop-app-service:3000
+#     * api.kendrickdev.shop                   -> api-app-service:8000
+#     * dashboard.kendrickdev.shop             -> shop-dashboard-service:9002
+# ==============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shop-ingress
+  labels:
+    app.kubernetes.io/name: shop-ingress
+    app.kubernetes.io/part-of: hello-k8s
+  annotations:
+    # Tell Kubernetes to use the AWS Load Balancer Controller
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # Direct routing to pod IP addresses using AWS VPC CNI (fastest latency)
+    alb.ingress.kubernetes.io/target-type: ip
+    # Dual-port listener on HTTP 80 and HTTPS 443
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    # Force automatic redirect from HTTP to HTTPS
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    # Wildcard ACM SSL Certificate ARN for kendrickdev.shop and *.kendrickdev.shop
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-southeast-2:542601847638:certificate/ca4e8033-f63c-461f-867d-96ab9cb887fc"
+    # Target group health check configuration
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
+    alb.ingress.kubernetes.io/success-codes: '200,301,302'
+spec:
+  ingressClassName: alb
+  rules:
+    # 1. Storefront Apex Domain (kendrickdev.shop)
+    - host: kendrickdev.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shop-app-service
+                port:
+                  number: 3000
+
+    # 2. Storefront WWW Subdomain (www.kendrickdev.shop)
+    - host: www.kendrickdev.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shop-app-service
+                port:
+                  number: 3000
+
+    # 3. Backend REST API (api.kendrickdev.shop)
+    - host: api.kendrickdev.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-app-service
+                port:
+                  number: 8000
+
+    # 4. Admin Dashboard (dashboard.kendrickdev.shop)
+    - host: dashboard.kendrickdev.shop
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shop-dashboard-service
+                port:
+                  number: 9002
