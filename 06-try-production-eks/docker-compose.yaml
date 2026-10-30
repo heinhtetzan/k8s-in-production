@@ -67,9 +67,8 @@ services:
     volumes:
       # Mount host source code into container for instant Vite HMR
       - ./services/shop-app:/app
-      # Preserve container-specific build and dependency directories
+      # Preserve container-specific node_modules (prevents overriding with host files)
       - /app/node_modules
-      - /app/.tanstack
     command: sh -c "bun install && bun run dev"
     depends_on:
       - api
@@ -93,9 +92,8 @@ services:
     volumes:
       # Mount host source code into container for instant Vite HMR
       - ./services/shop-dashboard:/app
-      # Preserve container-specific build and dependency directories
+      # Preserve container-specific node_modules (prevents overriding with host files)
       - /app/node_modules
-      - /app/.tanstack
     command: sh -c "bun install && bun run dev"
     depends_on:
       - api

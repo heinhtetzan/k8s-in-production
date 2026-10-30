@@ -448,7 +448,7 @@ kubectl delete -k k8s/eks
 pulumi destroy --yes
 
 # Step 3: (Optional) Delete ECR Repositories
-aws ecr delete-repository --repository-name api-app --region ap-southeast-2 --force
-aws ecr delete-repository --repository-name shop-app --region ap-southeast-2 --force
-aws ecr delete-repository --repository-name shop-dashboard --region ap-southeast-2 --force
+aws ecr delete-repository --repository-name kendrick-shop-api --region ap-southeast-2 --force
+aws ecr delete-repository --repository-name kendrick-shop-app --region ap-southeast-2 --force
+aws ecr delete-repository --repository-name kendrick-shop-dashboard --region ap-southeast-2 --force
 ```
