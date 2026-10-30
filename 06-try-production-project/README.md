@@ -56,11 +56,11 @@ curl -X POST http://localhost:9000/seed
 ### Run Automated Tests & Typechecks
 ```bash
 # Run backend unit & integration tests
-cd api-app && bun test && bun x tsc --noEmit && cd ..
+cd services/api-app && bun test && bun x tsc --noEmit && cd ../..
 
 # Verify frontend builds
-cd shop-app && bun run build && cd ..
-cd shop-dashboard && bun run build && cd ..
+cd services/shop-app && bun run build && cd ../..
+cd services/shop-dashboard && bun run build && cd ../..
 ```
 
 ### 💾 Backup Database & S3 Media (From Your Computer)
@@ -176,17 +176,17 @@ pulumi up --yes
    # 1. API Backend (Hono + Bun)
    docker buildx build --platform linux/amd64 --target prod \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/api-app:latest \
-     ./api-app --push
+     ./services/api-app --push
 
    # 2. Shop Frontend Storefront
    docker buildx build --platform linux/amd64 --target runner \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-app:latest \
-     ./shop-app --push
+     ./services/shop-app --push
 
    # 3. Shop Admin Dashboard
    docker buildx build --platform linux/amd64 --target runner \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:latest \
-     ./shop-dashboard --push
+     ./services/shop-dashboard --push
    ```
 
 ---
@@ -346,7 +346,7 @@ A wildcard certificate for `kendrickdev.shop` and `*.kendrickdev.shop` is active
 
 ### 3. `Failed to pull image ... rpc error: code = NotFound ... not found` (`ImagePullBackOff`)
 - **Cause**: The Docker image tag (e.g. `api-app:latest`) does not exist in your ECR repository.
-- **Fix**: Build and push the image using `docker buildx build --platform linux/amd64 ... ./api-app --push` (see **Step 3**).
+- **Fix**: Build and push the image using `docker buildx build --platform linux/amd64 ... ./services/api-app --push` (see **Step 3**).
 
 ### 4. `api error InvalidParameterValue: Invalid master password`
 - **Cause**: Pulumi was run without setting `dbPassword`, passing an empty string to RDS.

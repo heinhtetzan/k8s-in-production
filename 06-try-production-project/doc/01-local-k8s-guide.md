@@ -82,13 +82,13 @@ Because you are running locally, you do **not** need to tag images with the AWS 
 
 ```bash
 # 1. Backend API (Hono + Bun)
-docker build -t api-app:v2 ./api-app
+docker build -t api-app:v2 ./services/api-app
 
 # 2. Customer Storefront (TanStack Start / React)
-docker build -t shop-app:v2 ./shop-app
+docker build -t shop-app:v2 ./services/shop-app
 
 # 3. Admin Dashboard (TanStack Start / React)
-docker build -t shop-dashboard:v1 ./shop-dashboard
+docker build -t shop-dashboard:v1 ./services/shop-dashboard
 ```
 
 ---

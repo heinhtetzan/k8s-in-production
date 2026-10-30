@@ -183,19 +183,19 @@ flowchart LR
    docker buildx build --platform linux/amd64 --target prod \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/api-app:v1 \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/api-app:latest \
-     ./api-app --push
+     ./services/api-app --push
 
    # 2. Shop Frontend
    docker buildx build --platform linux/amd64 --target runner \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-app:v2 \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-app:latest \
-     ./shop-app --push
+     ./services/shop-app --push
 
    # 3. Shop Admin Dashboard
    docker buildx build --platform linux/amd64 --target runner \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:v1 \
      -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:latest \
-     ./shop-dashboard --push
+     ./services/shop-dashboard --push
    ```
 
 ---
