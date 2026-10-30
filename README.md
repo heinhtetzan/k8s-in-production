@@ -2,7 +2,7 @@
 
 A comprehensive, step-by-step curriculum covering computer systems, multi-stage Docker builds, AWS cloud architecture, Infrastructure as Code (IaC), Kubernetes primitives, and a complete production e-commerce stack on Amazon EKS.
 
-> 📖 **Instructor's Note**: Before starting, please read [**A Note from the Instructor (intro.md)**](./intro.md) for our class philosophy and how to approach this material effectively.
+> 📖 **Instructor's Note**: Before starting, please read [**A Note from the Instructor (intro.md)**](./intro.md) by **Kendrick (Hein Htet Zan)** ([LinkedIn](https://www.linkedin.com/in/hein-htet-zan/)) for our class philosophy and how to approach this material effectively.
 
 ---
 

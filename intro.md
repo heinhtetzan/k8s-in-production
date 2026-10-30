@@ -11,6 +11,7 @@ Hi, I'm **Kendrick (Hein Htet Zan)** from Myanmar.
 - **10+ years of software engineering experience** working with distributed teams and high-scale products worldwide.
 - **2 years as a Tech Lead in Bangkok**, leading engineering squads and driving technical architecture.
 - **Currently Lead Software Engineer (Remote) at MMS IT**.
+- 🔗 **LinkedIn**: [linkedin.com/in/hein-htet-zan](https://www.linkedin.com/in/hein-htet-zan/)
 
 Throughout my career as a Lead, I have worked day in and day out at the intersection of application code and cloud infrastructure — collaborating closely with **DevOps, platform engineers, and product teams**.
 
