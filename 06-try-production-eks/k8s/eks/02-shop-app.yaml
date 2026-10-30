@@ -1,0 +1,108 @@
+# ==============================================================================
+# 02. Shop Customer Storefront Service & Deployment (TanStack Start / React)
+# ==============================================================================
+# Architecture role:
+# - Serves the public-facing e-commerce storefront for customers.
+# - Connects internally to http://api-app-service:8000 for Server-Side Rendering (SSR).
+# - Exposed externally via AWS Load Balancer at https://kendrickdev.shop
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-app
+  labels:
+    app: shop-app
+    app.kubernetes.io/name: shop-app
+    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/component: storefront
+spec:
+  # Initial baseline replicas. Scaled dynamically by HPA (04-hpa.yaml) between 2 and 5 replicas.
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Spin up 1 new pod before terminating old ones
+      maxUnavailable: 0    # Never allow running replicas to drop below desired count
+  selector:
+    matchLabels:
+      app: shop-app
+  template:
+    metadata:
+      labels:
+        app: shop-app
+    spec:
+      terminationGracePeriodSeconds: 30 # Allow in-flight requests 30s to finish
+      containers:
+        - name: shop-app
+          image: 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-app:latest
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                # 5s delay gives AWS ALB time to deregister the pod IP before process stops
+                command: ["/bin/sh", "-c", "sleep 5"]
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: SHOP_PORT
+            - name: INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: INTERNAL_API_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: NODE_ENV
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: "100m"      # 0.1 vCPU baseline for HPA calculation
+              memory: "128Mi"
+            limits:
+              cpu: "500m"      # 0.5 vCPU burst ceiling
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-app-service
+  labels:
+    app: shop-app
+    app.kubernetes.io/name: shop-app
+    app.kubernetes.io/part-of: hello-k8s
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-southeast-2:542601847638:certificate/ca4e8033-f63c-461f-867d-96ab9cb887fc"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+spec:
+  type: LoadBalancer
+  selector:
+    app: shop-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 3000
+

@@ -1,0 +1,104 @@
+services:
+  # ==========================================
+  # PostgreSQL Database (Local)
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: kendrick-shop-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # API Service (Hono + Bun) - Port 9000
+  # ==========================================
+  api:
+    image: kendrick-shop-api:latest
+    build:
+      context: ./services/api-app
+      dockerfile: Dockerfile
+      target: dev
+    container_name: kendrick-shop-api
+    ports:
+      - "${API_PORT:-9000}:${API_PORT:-9000}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${API_PORT:-9000}
+    volumes:
+      # Mount host source code into container for instant hot-reload
+      - ./services/api-app:/app
+      # Preserve container node_modules (prevents overriding with host files)
+      - /app/node_modules
+    command: sh -c "bun install && bun run dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ==========================================
+  # Shop Service (TanStack Start + Vite) - Port 9001
+  # ==========================================
+  shop:
+    image: kendrick-shop-app:latest
+    build:
+      context: ./services/shop-app
+      dockerfile: Dockerfile
+      target: dev
+    container_name: kendrick-shop-app
+    ports:
+      - "${SHOP_PORT:-9001}:${SHOP_PORT:-9001}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${SHOP_PORT:-9001}
+    volumes:
+      # Mount host source code into container for instant Vite HMR
+      - ./services/shop-app:/app
+      # Preserve container-specific build and dependency directories
+      - /app/node_modules
+      - /app/.tanstack
+    command: sh -c "bun install && bun run dev"
+    depends_on:
+      - api
+
+  # ==========================================
+  # Dashboard Service (TanStack Start + Vite) - Port 9002
+  # ==========================================
+  dashboard:
+    image: kendrick-shop-dashboard:latest
+    build:
+      context: ./services/shop-dashboard
+      dockerfile: Dockerfile
+      target: dev
+    container_name: kendrick-shop-dashboard
+    ports:
+      - "${DASHBOARD_PORT:-9002}:${DASHBOARD_PORT:-9002}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${DASHBOARD_PORT:-9002}
+    volumes:
+      # Mount host source code into container for instant Vite HMR
+      - ./services/shop-dashboard:/app
+      # Preserve container-specific build and dependency directories
+      - /app/node_modules
+      - /app/.tanstack
+    command: sh -c "bun install && bun run dev"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

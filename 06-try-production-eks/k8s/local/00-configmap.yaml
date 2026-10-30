@@ -1,0 +1,23 @@
+# ==============================================================================
+# 00. Centralized Local ConfigMap
+# ==============================================================================
+# Centralizes non-sensitive environment variables for local Kubernetes dev:
+# - Connects frontend apps to the local cluster API at http://api-app-service:8000
+# - Configures container port numbers (8000, 3000, 9002)
+# - Disables SSL enforcement for in-cluster PostgreSQL (DB_SSL=false)
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-config
+  labels:
+    app.kubernetes.io/name: shop-config
+    app.kubernetes.io/part-of: hello-k8s
+    environment: local
+data:
+  API_PORT: "8000"
+  SHOP_PORT: "3000"
+  DASHBOARD_PORT: "9002"
+  INTERNAL_API_URL: "http://api-app-service:8000"
+  DB_SSL: "false"
+  NODE_ENV: "development"

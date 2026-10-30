@@ -1,0 +1,2475 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "E-Commerce Platform API",
+    "version": "2.0.0",
+    "description": "Comprehensive RESTful API for E-Commerce platform built with Bun, Hono, and Drizzle ORM on AWS EKS & RDS PostgreSQL. Features public storefront endpoints with rich filtering, search, pagination, and stock management.",
+    "contact": {
+      "name": "API Support",
+      "url": "https://kendrickdev.shop"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.kendrickdev.shop",
+      "description": "Production EKS Cluster (Live HTTPS)"
+    },
+    {
+      "url": "http://localhost:8000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Ecommerce",
+      "description": "Public storefront endpoints accessible without authentication"
+    },
+    {
+      "name": "Auth",
+      "description": "User registration, login, Google OAuth, and profile management"
+    },
+    {
+      "name": "Products",
+      "description": "Product catalog, pricing, categories, and image gallery management"
+    },
+    {
+      "name": "Brands",
+      "description": "Brand taxonomy management"
+    },
+    {
+      "name": "Categories",
+      "description": "Category taxonomy management"
+    },
+    {
+      "name": "Stocks",
+      "description": "Inventory levels, SKU management, and stock adjustments"
+    },
+    {
+      "name": "System",
+      "description": "System health checks and API discovery"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Database and server health check",
+        "description": "Verifies PostgreSQL database connection and Drizzle schema sync status.",
+        "responses": {
+          "200": {
+            "description": "Database connected and healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database disconnected or degraded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Root API discovery",
+        "description": "Returns available API endpoints and version metadata.",
+        "responses": {
+          "200": {
+            "description": "API discovery details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api.json": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "OpenAPI Specification JSON",
+        "description": "Returns the OpenAPI 3.0 specification for this API in JSON format.",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.0 JSON specification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seed": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Seed initial database records",
+        "description": "Seeds brands, categories, products, stock counts, and attaches S3 image URLs.",
+        "responses": {
+          "200": {
+            "description": "Seeding completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Database seeded successfully"
+                    },
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "usersCount": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "brandsCount": {
+                          "type": "integer",
+                          "example": 6
+                        },
+                        "categoriesCount": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "productsCount": {
+                          "type": "integer",
+                          "example": 10
+                        },
+                        "imagesCount": {
+                          "type": "integer",
+                          "example": 19
+                        },
+                        "stocksCount": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Seeding failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "Public storefront API overview",
+        "description": "Returns metadata and query parameter documentation for storefront consumers.",
+        "responses": {
+          "200": {
+            "description": "Storefront discovery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce/products": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "Public product catalog search and filtering",
+        "description": "Search and filter public products by brand, category, price, stock status, and sorting with pagination metadata.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Case-insensitive keyword search across product title, description, or SKU",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "iphone"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "description": "Filter by brand slug (e.g., apple) or UUID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "apple"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category slug (e.g., smartphones) or UUID",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "smartphones"
+            }
+          },
+          {
+            "name": "in_stock",
+            "in": "query",
+            "description": "Filter by inventory availability (true for in stock, false for out of stock)",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          },
+          {
+            "name": "stock_count",
+            "in": "query",
+            "description": "Filter products with at least this stock quantity",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "example": 5
+            }
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "Minimum price filter",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "example": 100
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "Maximum price filter",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "example": 1500
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort ordering",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "oldest",
+                "price_asc",
+                "price_desc",
+                "title_asc",
+                "title_desc"
+              ],
+              "default": "newest"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Pagination page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of products per page (max: 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 12,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated product list with stock_count and metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProductListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce/products/{idOrSlug}": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "Get public product details by UUID or slug",
+        "description": "Fetches single product details including primary image, gallery images, brand, category, and stock count.",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID or URL-friendly slug",
+            "schema": {
+              "type": "string",
+              "example": "iphone-16-pro"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PublicProduct"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce/brands": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "List all brands publicly",
+        "description": "Returns all brands along with their associated product counts.",
+        "responses": {
+          "200": {
+            "description": "List of brands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Brand"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce/brands/{idOrSlug}": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "Get brand details and its products",
+        "description": "Returns single brand information along with top products for that brand.",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Brand UUID or slug",
+            "schema": {
+              "type": "string",
+              "example": "apple"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Brand details with products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Brand"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "products": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/PublicProduct"
+                              }
+                            },
+                            "totalProducts": {
+                              "type": "integer",
+                              "example": 12
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Brand not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce/categories": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "List all categories publicly",
+        "description": "Returns all categories along with their associated product counts.",
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "count": {
+                      "type": "integer",
+                      "example": 8
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Category"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ecommerce/categories/{idOrSlug}": {
+      "get": {
+        "tags": [
+          "Ecommerce"
+        ],
+        "summary": "Get category details and its products",
+        "description": "Returns single category information along with top products for that category.",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID or slug",
+            "schema": {
+              "type": "string",
+              "example": "smartphones"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details with products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Category"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "products": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/PublicProduct"
+                              }
+                            },
+                            "totalProducts": {
+                              "type": "integer",
+                              "example": 25
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register new user account",
+        "description": "Creates a new customer or shop user account with email and password.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or email already in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "User login with email and password",
+        "description": "Authenticates user and returns JWT Bearer token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/google": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Authenticate with Google OAuth",
+        "description": "Signs in or registers user using Google ID token or profile details.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleAuthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Google authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Google authentication payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get current user profile",
+        "description": "Returns profile details of the authenticated user from the Bearer JWT token.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized / Missing token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brands": {
+      "get": {
+        "tags": [
+          "Brands"
+        ],
+        "summary": "List all brands",
+        "description": "Returns all brands in alphabetical order.",
+        "responses": {
+          "200": {
+            "description": "List of brands",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Brand"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Brands"
+        ],
+        "summary": "Create a brand",
+        "description": "Creates a brand. Requires authenticated user with \"shop\" role.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Brand created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Brand created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Brand"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (requires shop role)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brands/{idOrSlug}": {
+      "get": {
+        "tags": [
+          "Brands"
+        ],
+        "summary": "Get brand by ID or slug",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Brand UUID or slug",
+            "schema": {
+              "type": "string",
+              "example": "apple"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Brand retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Brand"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Brand not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brands/{id}": {
+      "patch": {
+        "tags": [
+          "Brands"
+        ],
+        "summary": "Update brand",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Brand UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBrandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Brand updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Brand updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Brand"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Update error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Brands"
+        ],
+        "summary": "Delete brand",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Brand UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Brand deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Brand deleted successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Brand"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Deletion failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "List all categories",
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Category"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create a category",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Category created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{idOrSlug}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get category by ID or slug",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID or slug",
+            "schema": {
+              "type": "string",
+              "example": "electronics"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "patch": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Update category",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Category updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Delete category",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Category UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Category deleted successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Category"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "List all products (Admin)",
+        "description": "Returns products with brand, category, images, and stock attached.",
+        "responses": {
+          "200": {
+            "description": "List of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 10
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Create a new product",
+        "description": "Creates a product, initializes inventory stock, and attaches initial image URLs.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Product created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{idOrSlug}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get product by ID or slug",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID or slug",
+            "schema": {
+              "type": "string",
+              "example": "iphone-16-pro"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{id}": {
+      "patch": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Update product",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Product updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Delete product",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Product deleted successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{id}/images": {
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Add an image to a product",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddProductImageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Image added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Image added successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProductImage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/images/{imageId}": {
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Delete a product image",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "imageId",
+            "in": "path",
+            "required": true,
+            "description": "Product image UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Image deleted successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProductImage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stocks": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "List all stock entries",
+        "responses": {
+          "200": {
+            "description": "List of stock records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 10
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Stock"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stocks/{productId}": {
+      "get": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Get stock level for product",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stock details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Stock"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Stocks"
+        ],
+        "summary": "Set or update inventory quantity and SKU",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "description": "Product UUID",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStockRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stock updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Stock updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Stock"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT Bearer token obtained from /auth/login or /auth/register"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "Alex Smith"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/avatar.jpg"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "shop",
+              "customer"
+            ],
+            "example": "shop"
+          },
+          "googleId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "name"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "seller@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 6,
+            "example": "secret123"
+          },
+          "name": {
+            "type": "string",
+            "example": "Apple Store Official"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "shop",
+              "customer"
+            ],
+            "default": "customer",
+            "example": "shop"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "example": "https://example.com/logo.png"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "seller@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "secret123"
+          }
+        }
+      },
+      "GoogleAuthRequest": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "Google ID token"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "googleId": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "AuthSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Login successful"
+          },
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "Brand": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "Apple"
+          },
+          "slug": {
+            "type": "string",
+            "example": "apple"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/apple.png"
+          },
+          "productsCount": {
+            "type": "integer",
+            "example": 12
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateBrandRequest": {
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Apple"
+          },
+          "slug": {
+            "type": "string",
+            "example": "apple"
+          },
+          "image": {
+            "type": "string",
+            "example": "https://example.com/apple.png"
+          }
+        }
+      },
+      "UpdateBrandRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Apple Inc."
+          },
+          "slug": {
+            "type": "string",
+            "example": "apple-inc"
+          },
+          "image": {
+            "type": "string",
+            "example": "https://example.com/apple-new.png"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "Smartphones"
+          },
+          "slug": {
+            "type": "string",
+            "example": "smartphones"
+          },
+          "productsCount": {
+            "type": "integer",
+            "example": 25
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateCategoryRequest": {
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Smartphones"
+          },
+          "slug": {
+            "type": "string",
+            "example": "smartphones"
+          }
+        }
+      },
+      "UpdateCategoryRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Mobile Phones"
+          },
+          "slug": {
+            "type": "string",
+            "example": "mobile-phones"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "iPhone 16 Pro"
+          },
+          "slug": {
+            "type": "string",
+            "example": "iphone-16-pro"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Titanium design with A18 Pro chip"
+          },
+          "price": {
+            "type": "string",
+            "example": "999.00"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "brand": {
+            "$ref": "#/components/schemas/Brand"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "stock": {
+            "$ref": "#/components/schemas/Stock"
+          }
+        }
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "price"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "iPhone 16 Pro"
+          },
+          "description": {
+            "type": "string",
+            "example": "Titanium design with A18 Pro chip"
+          },
+          "price": {
+            "type": "number",
+            "example": 999
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "example": "iphone-16-pro"
+          },
+          "initialStock": {
+            "type": "integer",
+            "example": 50
+          },
+          "sku": {
+            "type": "string",
+            "example": "IP16-PRO-BLK"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "https://example.com/front.png",
+              "https://example.com/back.png"
+            ]
+          }
+        }
+      },
+      "UpdateProductRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "iPhone 16 Pro Max"
+          },
+          "description": {
+            "type": "string",
+            "example": "Updated description"
+          },
+          "price": {
+            "type": "number",
+            "example": 1099
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "example": "iphone-16-pro-max"
+          }
+        }
+      },
+      "ProductImage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://example.com/image.png"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "example": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AddProductImageRequest": {
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://example.com/image2.png"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "default": false,
+            "example": false
+          }
+        }
+      },
+      "Stock": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 50
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true,
+            "example": "IP16-PRO-BLK"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateStockRequest": {
+        "type": "object",
+        "required": [
+          "quantity"
+        ],
+        "properties": {
+          "quantity": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 75
+          },
+          "sku": {
+            "type": "string",
+            "example": "IP16-PRO-BLK"
+          }
+        }
+      },
+      "PublicProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "iPhone 16 Pro"
+          },
+          "slug": {
+            "type": "string",
+            "example": "iphone-16-pro"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Titanium design with A18 Pro chip"
+          },
+          "price": {
+            "type": "string",
+            "example": "999.00"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "stock_count": {
+            "type": "integer",
+            "example": 25
+          },
+          "in_stock": {
+            "type": "boolean",
+            "example": true
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true,
+            "example": "IP16-PRO-BLK"
+          },
+          "primary_image": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://example.com/front.png"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            }
+          },
+          "brand": {
+            "$ref": "#/components/schemas/Brand"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 12
+          },
+          "total": {
+            "type": "integer",
+            "example": 45
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 4
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "example": true
+          },
+          "hasPrevPage": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "FilterMeta": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "nullable": true,
+            "example": "iphone"
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true,
+            "example": "apple"
+          },
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "example": "smartphones"
+          },
+          "minPrice": {
+            "type": "number",
+            "nullable": true,
+            "example": 500
+          },
+          "maxPrice": {
+            "type": "number",
+            "nullable": true,
+            "example": 1200
+          },
+          "inStock": {
+            "type": "boolean",
+            "nullable": true,
+            "example": true
+          },
+          "minStock": {
+            "type": "integer",
+            "nullable": true,
+            "example": 5
+          },
+          "sort": {
+            "type": "string",
+            "example": "newest"
+          }
+        }
+      },
+      "PublicProductListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicProduct"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/FilterMeta"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "database": {
+            "type": "string",
+            "example": "connected"
+          },
+          "orm": {
+            "type": "string",
+            "example": "drizzle"
+          },
+          "db_info": {
+            "type": "object"
+          }
+        }
+      },
+      "DiscoveryResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "E-Commerce Platform API"
+          },
+          "version": {
+            "type": "string",
+            "example": "2.0.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "endpoints": {
+            "type": "object"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "Resource not found"
+          }
+        }
+      }
+    }
+  }
+}

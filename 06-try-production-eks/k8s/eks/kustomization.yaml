@@ -1,0 +1,23 @@
+# ==============================================================================
+# Kustomization Manifest for AWS EKS Production
+# ==============================================================================
+# Deploy all resources together with a single command:
+#   kubectl apply -k k8s/eks
+#
+# Preview rendered YAML before applying:
+#   kubectl kustomize k8s/eks
+#
+# Delete all deployed resources:
+#   kubectl delete -k k8s/eks
+# ==============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 00-configmap.yaml
+  - 01-api-app.yaml
+  - 02-shop-app.yaml
+  - 03-shop-dashboard.yaml
+  - 04-hpa.yaml
+  # - 05-ingress.yaml # Optional: Enable when AWS Load Balancer Controller is installed
+

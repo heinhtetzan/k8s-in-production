@@ -1,0 +1,172 @@
+name: CI/CD Pipeline - Build & Deploy to EKS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hello-k8s/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REGISTRY: 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com
+  EKS_CLUSTER_NAME: shop-eks-cluster
+
+jobs:
+  # ==========================================================================
+  # 1. Test & Validate Code
+  # ==========================================================================
+  test:
+    name: Run Tests & Typecheck
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: shop
+          POSTGRES_USER: shop
+          POSTGRES_PASSWORD: password123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Test API App
+        working-directory: hello-k8s/services/api-app
+        env:
+          DATABASE_URL: postgres://shop:password123@localhost:5432/shop
+          DB_SSL: 'false'
+        run: |
+          bun install
+          bun test
+
+      - name: Build & Validate Shop Storefront
+        working-directory: hello-k8s/services/shop-app
+        run: |
+          bun install
+          bun run build
+
+      - name: Build & Validate Admin Dashboard
+        working-directory: hello-k8s/services/shop-dashboard
+        run: |
+          bun install
+          bun run build
+
+  # ==========================================================================
+  # 2. Build & Push Docker Images to Amazon ECR
+  # ==========================================================================
+  build-and-push:
+    name: Build & Push Images to ECR
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Compute Short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1. Build & Push api-app (linux/amd64 for EKS)
+      - name: Build & Push api-app
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hello-k8s/services/api-app
+          target: prod
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-api:${{ steps.vars.outputs.sha_short }}
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-api:latest
+
+      # 2. Build & Push shop-app (linux/amd64 for EKS)
+      - name: Build & Push shop-app
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hello-k8s/services/shop-app
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-app:${{ steps.vars.outputs.sha_short }}
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-app:latest
+
+      # 3. Build & Push shop-dashboard (linux/amd64 for EKS)
+      - name: Build & Push shop-dashboard
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hello-k8s/services/shop-dashboard
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-dashboard:${{ steps.vars.outputs.sha_short }}
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-dashboard:latest
+
+  # ==========================================================================
+  # 3. Deploy to AWS EKS
+  # ==========================================================================
+  deploy:
+    name: Deploy to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update Kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Update Kubernetes Deployments with new Image Tags
+        run: |
+          IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
+          
+          # Deploy workloads, Ingress, and Autoscalers via Kustomize
+          kubectl apply -k hello-k8s/k8s/eks
+          
+          # Update images to latest built commit
+          kubectl set image deployment/api-app api-app=${{ env.ECR_REGISTRY }}/kendrick-shop-api:${IMAGE_TAG}
+          kubectl set image deployment/shop-app shop-app=${{ env.ECR_REGISTRY }}/kendrick-shop-app:${IMAGE_TAG}
+          kubectl set image deployment/shop-dashboard shop-dashboard=${{ env.ECR_REGISTRY }}/kendrick-shop-dashboard:${IMAGE_TAG}
+          
+          # Verify rollout
+          kubectl rollout status deployment/api-app --timeout=180s
+          kubectl rollout status deployment/shop-app --timeout=180s
+          kubectl rollout status deployment/shop-dashboard --timeout=180s

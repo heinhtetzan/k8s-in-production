@@ -1,0 +1,108 @@
+# ==============================================================================
+# 03. Admin Dashboard Service & Deployment (TanStack Start / React)
+# ==============================================================================
+# Architecture role:
+# - Serves the administrative management console (products, orders, users, seed).
+# - Connects internally to http://api-app-service:8000 for server data fetching.
+# - Exposed externally via AWS Load Balancer at https://dashboard.kendrickdev.shop
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-dashboard
+  labels:
+    app: shop-dashboard
+    app.kubernetes.io/name: shop-dashboard
+    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/component: admin-dashboard
+spec:
+  # Internal admin tool with predictable, low-traffic usage. 1 replica is typical.
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Spin up 1 new pod before terminating old ones
+      maxUnavailable: 0    # Never allow running replicas to drop below desired count
+  selector:
+    matchLabels:
+      app: shop-dashboard
+  template:
+    metadata:
+      labels:
+        app: shop-dashboard
+    spec:
+      terminationGracePeriodSeconds: 30 # Allow in-flight requests 30s to finish
+      containers:
+        - name: shop-dashboard
+          image: 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-dashboard:latest
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                # 5s delay gives AWS ALB time to deregister the pod IP before process stops
+                command: ["/bin/sh", "-c", "sleep 5"]
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: DASHBOARD_PORT
+            - name: INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: INTERNAL_API_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: NODE_ENV
+          ports:
+            - containerPort: 9002
+              name: http
+          resources:
+            requests:
+              cpu: "100m"      # 0.1 vCPU
+              memory: "128Mi"
+            limits:
+              cpu: "500m"      # 0.5 vCPU
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9002
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-dashboard-service
+  labels:
+    app: shop-dashboard
+    app.kubernetes.io/name: shop-dashboard
+    app.kubernetes.io/part-of: hello-k8s
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-southeast-2:542601847638:certificate/ca4e8033-f63c-461f-867d-96ab9cb887fc"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+spec:
+  type: LoadBalancer
+  selector:
+    app: shop-dashboard
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 9002
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 9002
+

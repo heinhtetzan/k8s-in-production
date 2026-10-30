@@ -1,0 +1,11 @@
+bin/
+node_modules/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+*.sql
+*.sql.gz
+backups/
+.kubeconfig

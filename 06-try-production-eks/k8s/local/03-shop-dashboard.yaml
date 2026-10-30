@@ -1,0 +1,87 @@
+# ==============================================================================
+# 03. Admin Dashboard Service & Deployment (TanStack Start / React) - Local Dev
+# ==============================================================================
+# - Serves admin dashboard on localhost:9002.
+# - Connects internally to http://api-app-service:8000 for management APIs.
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-dashboard
+  labels:
+    app: shop-dashboard
+    app.kubernetes.io/name: shop-dashboard
+    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/component: admin-dashboard
+    environment: local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shop-dashboard
+  template:
+    metadata:
+      labels:
+        app: shop-dashboard
+    spec:
+      containers:
+        - name: shop-dashboard
+          image: kendrick-shop-dashboard:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: DASHBOARD_PORT
+            - name: INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: INTERNAL_API_URL
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-config
+                  key: NODE_ENV
+          ports:
+            - containerPort: 9002
+              name: http
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9002
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-dashboard-service
+  labels:
+    app: shop-dashboard
+    app.kubernetes.io/name: shop-dashboard
+    app.kubernetes.io/part-of: hello-k8s
+    environment: local
+spec:
+  type: LoadBalancer
+  selector:
+    app: shop-dashboard
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9002
+      targetPort: 9002

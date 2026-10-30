@@ -1,0 +1,27 @@
+# ==============================================================================
+# 00. Centralized Application ConfigMap
+# ==============================================================================
+# Architecture role:
+# - Centralizes all non-sensitive environment variables in one single place.
+# - Decouples application configuration from container Deployment manifests.
+# - Safe to commit to version control (Git).
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-config
+  labels:
+    app.kubernetes.io/name: shop-config
+    app.kubernetes.io/part-of: hello-k8s
+data:
+  # Port configurations for each microservice
+  API_PORT: "8000"
+  SHOP_PORT: "3000"
+  DASHBOARD_PORT: "9002"
+
+  # Internal cluster DNS endpoint for API backend (used by shop-app and dashboard)
+  INTERNAL_API_URL: "http://api-app-service:8000"
+
+  # Application runtime flags
+  DB_SSL: "true"
+  NODE_ENV: "production"

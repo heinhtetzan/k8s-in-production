@@ -1,0 +1,25 @@
+# ==============================================================================
+# Kustomization Manifest for Local Kubernetes Development
+# ==============================================================================
+# Deploy all local resources together with a single command:
+#   kubectl apply -k k8s/local
+#
+# Preview rendered YAML before applying:
+#   kubectl kustomize k8s/local
+#
+# Delete all deployed resources:
+#   kubectl delete -k k8s/local
+# ==============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 00-configmap.yaml
+  - 00-postgres.yaml
+  - 01-api-app.yaml
+  - 02-shop-app.yaml
+  - 03-shop-dashboard.yaml
+
+labels:
+  - pairs:
+      environment: local
