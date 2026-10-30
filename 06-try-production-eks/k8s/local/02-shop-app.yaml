@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: shop-app
-          image: shop-app:latest
+          image: kendrick-shop-app:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: PORT

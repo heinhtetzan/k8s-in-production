@@ -139,7 +139,7 @@ const cluster = new eks.Cluster("shop-cluster", {
   authenticationMode: "API_AND_CONFIG_MAP", // Sourced from both EKS Access Entries and aws-auth ConfigMap
   enabledClusterLogTypes: [], // Disabled to prevent CloudWatch log ingestion charges
   tags: {
-    Environment: "dev",
+    Environment: "production",
     Project: "hello-k8s",
   },
 });
@@ -232,7 +232,7 @@ const rdsInstance = new aws.rds.Instance("shop-postgres", {
   publiclyAccessible: false, // Kept private inside VPC
   tags: {
     Name: "shop-postgres-db",
-    Environment: "dev",
+    Environment: "production",
   },
 });
 

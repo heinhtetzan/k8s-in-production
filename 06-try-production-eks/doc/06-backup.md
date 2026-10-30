@@ -108,7 +108,7 @@ SNAPSHOT_ID="shop-postgres-manual-$(date +%Y%m%d-%H%M%S)"
 aws rds create-db-snapshot \
   --db-instance-identifier shop-postgres-db \
   --db-snapshot-identifier "$SNAPSHOT_ID" \
-  --tags Key=Environment,Value=dev Key=Project,Value=hello-k8s \
+  --tags Key=Environment,Value=production Key=Project,Value=shop-eks-prod \
   --region ap-southeast-2
 
 echo "Triggered snapshot: $SNAPSHOT_ID"

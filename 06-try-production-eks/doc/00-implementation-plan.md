@@ -87,9 +87,9 @@ flowchart LR
    aws sts get-caller-identity
    ```
    *(If expired: `aws login` or `aws sso login`)*
-2. **Configure Pulumi dev Stack**:
+2. **Configure Pulumi prod Stack**:
    ```bash
-   pulumi stack select dev || pulumi stack init dev
+   pulumi stack select prod || pulumi stack init prod
    pulumi config set aws:region ap-southeast-2
    pulumi config set --secret dbPassword asdffdsa
    ```
@@ -173,28 +173,28 @@ flowchart LR
    ```
 2. **Create ECR Repositories** *(if not present)*:
    ```bash
-   aws ecr create-repository --repository-name api-app --region ap-southeast-2 || true
-   aws ecr create-repository --repository-name shop-app --region ap-southeast-2 || true
-   aws ecr create-repository --repository-name shop-dashboard --region ap-southeast-2 || true
+   aws ecr create-repository --repository-name kendrick-shop-api --region ap-southeast-2 || true
+   aws ecr create-repository --repository-name kendrick-shop-app --region ap-southeast-2 || true
+   aws ecr create-repository --repository-name kendrick-shop-dashboard --region ap-southeast-2 || true
    ```
 3. **Build & Push All 3 Container Images** (Must be `--platform linux/amd64` for EKS):
    ```bash
    # 1. API Backend
    docker buildx build --platform linux/amd64 --target prod \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/api-app:v1 \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/api-app:latest \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-api:v1 \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-api:latest \
      ./services/api-app --push
 
    # 2. Shop Frontend
    docker buildx build --platform linux/amd64 --target runner \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-app:v2 \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-app:latest \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-app:v2 \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-app:latest \
      ./services/shop-app --push
 
    # 3. Shop Admin Dashboard
    docker buildx build --platform linux/amd64 --target runner \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:v1 \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:latest \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-dashboard:v1 \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-dashboard:latest \
      ./services/shop-dashboard --push
    ```
 

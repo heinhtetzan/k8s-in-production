@@ -57,7 +57,7 @@ kubectl config current-context
 | **Database** | PostgreSQL container pod inside the cluster (`postgres-service:5432`) | AWS RDS PostgreSQL 16 multi-AZ managed instance with private VPC peering |
 | **External Access** | `type: LoadBalancer` maps directly to `localhost` ports (`8000`, `3000`, `9002`) | AWS Application Load Balancer (ALB) via Ingress + Route 53 Custom Domains |
 | **SSL / HTTPS** | Plain HTTP (`http://localhost:...`) for speed and simplicity | AWS Certificate Manager (ACM) Wildcard TLS (`https://*.kendrickdev.shop`) |
-| **Docker Images** | Local image daemon (`api-app:latest`, `imagePullPolicy: IfNotPresent`) | Amazon ECR private repository (`542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/...`) |
+| **Docker Images** | Local image daemon (`kendrick-shop-api:latest`, `imagePullPolicy: IfNotPresent`) | Amazon ECR private repository (`542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/...`) |
 | **DNS Resolution** | CoreDNS resolves internal `.svc.cluster.local` names | CoreDNS + AWS Route 53 Hosted Zone |
 | **Auto-Scaling** | Fixed replica counts (single node hardware limit) | Horizontal Pod Autoscaler (HPA) + Cluster Autoscaler (Auto Scaling Group) |
 
@@ -82,13 +82,13 @@ Because you are running locally, you do **not** need to tag images with the AWS 
 
 ```bash
 # 1. Backend API (Hono + Bun)
-docker build -t api-app:v2 ./services/api-app
+docker build -t kendrick-shop-api:latest ./services/api-app
 
 # 2. Customer Storefront (TanStack Start / React)
-docker build -t shop-app:v2 ./services/shop-app
+docker build -t kendrick-shop-app:latest ./services/shop-app
 
 # 3. Admin Dashboard (TanStack Start / React)
-docker build -t shop-dashboard:v1 ./services/shop-dashboard
+docker build -t kendrick-shop-dashboard:latest ./services/shop-dashboard
 ```
 
 ---

@@ -105,8 +105,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/api-app:${{ steps.vars.outputs.sha_short }}
-            ${{ env.ECR_REGISTRY }}/api-app:latest
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-api:${{ steps.vars.outputs.sha_short }}
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-api:latest
 
       # 2. Build & Push shop-app (linux/amd64 for EKS)
       - name: Build & Push shop-app
@@ -117,8 +117,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/shop-app:${{ steps.vars.outputs.sha_short }}
-            ${{ env.ECR_REGISTRY }}/shop-app:latest
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-app:${{ steps.vars.outputs.sha_short }}
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-app:latest
 
       # 3. Build & Push shop-dashboard (linux/amd64 for EKS)
       - name: Build & Push shop-dashboard
@@ -129,8 +129,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/shop-dashboard:${{ steps.vars.outputs.sha_short }}
-            ${{ env.ECR_REGISTRY }}/shop-dashboard:latest
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-dashboard:${{ steps.vars.outputs.sha_short }}
+            ${{ env.ECR_REGISTRY }}/kendrick-shop-dashboard:latest
 
   # ==========================================================================
   # 3. Deploy to AWS EKS
@@ -162,9 +162,9 @@ jobs:
           kubectl apply -k hello-k8s/k8s/eks
           
           # Update images to latest built commit
-          kubectl set image deployment/api-app api-app=${{ env.ECR_REGISTRY }}/api-app:${IMAGE_TAG}
-          kubectl set image deployment/shop-app shop-app=${{ env.ECR_REGISTRY }}/shop-app:${IMAGE_TAG}
-          kubectl set image deployment/shop-dashboard shop-dashboard=${{ env.ECR_REGISTRY }}/shop-dashboard:${IMAGE_TAG}
+          kubectl set image deployment/api-app api-app=${{ env.ECR_REGISTRY }}/kendrick-shop-api:${IMAGE_TAG}
+          kubectl set image deployment/shop-app shop-app=${{ env.ECR_REGISTRY }}/kendrick-shop-app:${IMAGE_TAG}
+          kubectl set image deployment/shop-dashboard shop-dashboard=${{ env.ECR_REGISTRY }}/kendrick-shop-dashboard:${IMAGE_TAG}
           
           # Verify rollout
           kubectl rollout status deployment/api-app --timeout=180s

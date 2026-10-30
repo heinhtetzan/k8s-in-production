@@ -3,7 +3,7 @@
 > **Target Cluster:** `shop-eks-cluster` (`ap-southeast-2`)  
 > **Current Live Compute:** 2x `t3.small` EC2 Worker Nodes  
 > **Current Live Workloads:** 11 Pods across 3 Applications & System Services  
-> **Config Files:** [index.ts](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts), [Pulumi.dev.yaml](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/Pulumi.dev.yaml), [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks)
+> **Config Files:** [index.ts](file:///Users/kendirck/Desktop/learn/k8s-in-production/06-try-production-eks/index.ts), [Pulumi.yaml](file:///Users/kendirck/Desktop/learn/k8s-in-production/06-try-production-eks/Pulumi.yaml), [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/k8s-in-production/06-try-production-eks/k8s/eks)
 
 ---
 
@@ -91,8 +91,8 @@ const cluster = new eks.Cluster("shop-cluster", {
   authenticationMode: "API_AND_CONFIG_MAP",
   enabledClusterLogTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"],
   tags: {
-    Environment: "dev",
-    Project: "hello-k8s",
+    Environment: "production",
+    Project: "shop-eks-prod",
   },
 });
 ```
@@ -112,7 +112,7 @@ pulumi preview
 pulumi up -y
 ```
 
-#### Option B: Dynamic Configuration via `Pulumi.dev.yaml` (Best Practice)
+#### Option B: Dynamic Configuration via Pulumi Stack Config (Best Practice)
 Make node scaling dynamically configurable without editing TypeScript code each time:
 
 1. Update `index.ts` to read from Pulumi config with fallbacks:

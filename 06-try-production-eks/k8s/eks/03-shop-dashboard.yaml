@@ -34,7 +34,7 @@ spec:
       terminationGracePeriodSeconds: 30 # Allow in-flight requests 30s to finish
       containers:
         - name: shop-dashboard
-          image: 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:latest
+          image: 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-dashboard:latest
           imagePullPolicy: Always
           lifecycle:
             preStop:

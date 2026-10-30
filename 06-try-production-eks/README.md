@@ -95,8 +95,8 @@ Follow these steps **in chronological order** to deploy the infrastructure, buil
 
 2. **Configure Pulumi Stack**:
    ```bash
-   # Select dev stack
-   pulumi stack select dev || pulumi stack init dev
+   # Select production stack
+   pulumi stack select prod || pulumi stack init prod
 
    # Set AWS Region
    pulumi config set aws:region ap-southeast-2
@@ -166,26 +166,26 @@ pulumi up --yes
 
 3. **Create ECR Repositories** *(first time only)*:
    ```bash
-   aws ecr create-repository --repository-name api-app --region ap-southeast-2 || true
-   aws ecr create-repository --repository-name shop-app --region ap-southeast-2 || true
-   aws ecr create-repository --repository-name shop-dashboard --region ap-southeast-2 || true
+   aws ecr create-repository --repository-name kendrick-shop-api --region ap-southeast-2 || true
+   aws ecr create-repository --repository-name kendrick-shop-app --region ap-southeast-2 || true
+   aws ecr create-repository --repository-name kendrick-shop-dashboard --region ap-southeast-2 || true
    ```
 
 4. **Build & Push All 3 Images**:
    ```bash
    # 1. API Backend (Hono + Bun)
    docker buildx build --platform linux/amd64 --target prod \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/api-app:latest \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-api:latest \
      ./services/api-app --push
 
    # 2. Shop Frontend Storefront
    docker buildx build --platform linux/amd64 --target runner \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-app:latest \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-app:latest \
      ./services/shop-app --push
 
    # 3. Shop Admin Dashboard
    docker buildx build --platform linux/amd64 --target runner \
-     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/shop-dashboard:latest \
+     -t 542601847638.dkr.ecr.ap-southeast-2.amazonaws.com/kendrick-shop-dashboard:latest \
      ./services/shop-dashboard --push
    ```
 
@@ -345,7 +345,7 @@ A wildcard certificate for `kendrickdev.shop` and `*.kendrickdev.shop` is active
 - **Fix**: Check `kubectl get pods`. If pods are in `ImagePullBackOff`, you have not pushed container images to ECR yet (see **Step 3**). Once images are pushed and pods turn to `Running`, the 503 will resolve.
 
 ### 3. `Failed to pull image ... rpc error: code = NotFound ... not found` (`ImagePullBackOff`)
-- **Cause**: The Docker image tag (e.g. `api-app:latest`) does not exist in your ECR repository.
+- **Cause**: The Docker image tag (e.g. `kendrick-shop-api:latest`) does not exist in your ECR repository.
 - **Fix**: Build and push the image using `docker buildx build --platform linux/amd64 ... ./services/api-app --push` (see **Step 3**).
 
 ### 4. `api error InvalidParameterValue: Invalid master password`

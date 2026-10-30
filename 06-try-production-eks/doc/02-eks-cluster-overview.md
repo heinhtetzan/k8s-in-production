@@ -77,7 +77,7 @@ flowchart TB
     end
 
     subgraph SupportingServices ["📦 AWS Cloud Supporting Services"]
-        ECR["Amazon ECR<br/>• api-app:latest<br/>• shop-app:latest<br/>• shop-dashboard:latest"]
+        ECR["Amazon ECR<br/>• kendrick-shop-api:latest<br/>• kendrick-shop-app:latest<br/>• kendrick-shop-dashboard:latest"]
         S3["Amazon S3 Media Bucket<br/>shop-media-542601847638<br/>Product Images & Assets"]
         CW["Amazon CloudWatch<br/>• Container Insights<br/>• Control Plane Logs (API/Audit)"]
         IAM["AWS IAM & Access Entries<br/>• SSO Admin Access Role<br/>• GitHub Actions Deployer"]

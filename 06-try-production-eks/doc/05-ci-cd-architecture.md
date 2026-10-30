@@ -72,9 +72,9 @@ sequenceDiagram
     Note over GHA, ECR: Stage 2: Build & Push (linux/amd64)
     GHA->>GHA: Authenticate to AWS via Secrets
     GHA->>GHA: Compute Git Commit Short SHA
-    GHA->>ECR: docker build & push api-app:sha & :latest
-    GHA->>ECR: docker build & push shop-app:sha & :latest
-    GHA->>ECR: docker build & push shop-dashboard:sha & :latest
+    GHA->>ECR: docker build & push kendrick-shop-api:sha & :latest
+    GHA->>ECR: docker build & push kendrick-shop-app:sha & :latest
+    GHA->>ECR: docker build & push kendrick-shop-dashboard:sha & :latest
     end
 
     rect rgb(45, 28, 12)

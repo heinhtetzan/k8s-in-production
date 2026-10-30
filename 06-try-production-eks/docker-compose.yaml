@@ -1,10 +1,10 @@
 services:
   # ==========================================
-  # PostgreSQL Database (Local Dev)
+  # PostgreSQL Database (Local)
   # ==========================================
   postgres:
     image: postgres:16-alpine
-    container_name: shop-postgres-dev
+    container_name: kendrick-shop-postgres
     restart: unless-stopped
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -26,11 +26,12 @@ services:
   # API Service (Hono + Bun) - Port 9000
   # ==========================================
   api:
+    image: kendrick-shop-api:latest
     build:
       context: ./services/api-app
       dockerfile: Dockerfile
       target: dev
-    container_name: api-app-dev
+    container_name: kendrick-shop-api
     ports:
       - "${API_PORT:-9000}:${API_PORT:-9000}"
     env_file:
@@ -51,11 +52,12 @@ services:
   # Shop Service (TanStack Start + Vite) - Port 9001
   # ==========================================
   shop:
+    image: kendrick-shop-app:latest
     build:
       context: ./services/shop-app
       dockerfile: Dockerfile
       target: dev
-    container_name: shop-app-dev
+    container_name: kendrick-shop-app
     ports:
       - "${SHOP_PORT:-9001}:${SHOP_PORT:-9001}"
     env_file:
@@ -76,11 +78,12 @@ services:
   # Dashboard Service (TanStack Start + Vite) - Port 9002
   # ==========================================
   dashboard:
+    image: kendrick-shop-dashboard:latest
     build:
       context: ./services/shop-dashboard
       dockerfile: Dockerfile
       target: dev
-    container_name: shop-dashboard-dev
+    container_name: kendrick-shop-dashboard
     ports:
       - "${DASHBOARD_PORT:-9002}:${DASHBOARD_PORT:-9002}"
     env_file:

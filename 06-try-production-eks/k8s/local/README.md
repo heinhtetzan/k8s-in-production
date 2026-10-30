@@ -24,13 +24,13 @@ Before deploying, build images tagged locally (no need to push to AWS ECR):
 
 ```bash
 # 1. API Backend
-docker build -t api-app:latest ./services/api-app
+docker build -t kendrick-shop-api:latest ./services/api-app
 
 # 2. Customer Storefront
-docker build -t shop-app:latest ./services/shop-app
+docker build -t kendrick-shop-app:latest ./services/shop-app
 
 # 3. Admin Dashboard
-docker build -t shop-dashboard:latest ./services/shop-dashboard
+docker build -t kendrick-shop-dashboard:latest ./services/shop-dashboard
 ```
 
 ### 2. Deploy All Workloads with Kustomize
