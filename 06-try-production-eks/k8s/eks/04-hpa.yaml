@@ -27,7 +27,7 @@ metadata:
   labels:
     app: api-app
     app.kubernetes.io/name: api-app-hpa
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -76,7 +76,7 @@ metadata:
   labels:
     app: shop-app
     app.kubernetes.io/name: shop-app-hpa
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -122,7 +122,7 @@ metadata:
   labels:
     app: shop-dashboard
     app.kubernetes.io/name: shop-dashboard-hpa
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

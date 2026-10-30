@@ -1,6 +1,6 @@
 # AWS EKS Kubernetes Manifests & HPA Architecture
 
-This directory contains the modularized production Kubernetes manifests for running the `hello-k8s` stack on Amazon EKS.
+This directory contains the modularized production Kubernetes manifests for running the `kendrick-shop` stack on Amazon EKS.
 
 ---
 

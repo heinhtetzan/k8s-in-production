@@ -140,7 +140,7 @@ const cluster = new eks.Cluster("shop-cluster", {
   enabledClusterLogTypes: [], // Disabled to prevent CloudWatch log ingestion charges
   tags: {
     Environment: "production",
-    Project: "hello-k8s",
+    Project: "kendrick-shop",
   },
 });
 

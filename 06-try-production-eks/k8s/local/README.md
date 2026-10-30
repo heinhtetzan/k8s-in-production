@@ -55,6 +55,14 @@ curl -X POST http://localhost:8000/seed
 - **Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
 
+> [!NOTE]
+> If your local Kubernetes cluster does not automatically bind `type: LoadBalancer` to macOS `localhost`, port-forward directly to the services:
+> ```bash
+> kubectl port-forward svc/api-app-service 8000:8000 &
+> kubectl port-forward svc/shop-app-service 3000:3000 &
+> kubectl port-forward svc/shop-dashboard-service 9002:9002 &
+> ```
+
 ---
 
 ## 🧹 Teardown Local Cluster Workloads

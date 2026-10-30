@@ -5,7 +5,7 @@
 > **RDS Instance Identifier:** `shop-postgres-db` (PostgreSQL 16.10, `db.t4g.micro`)  
 > **Primary S3 Media Bucket:** `shop-media-542601847638`  
 > **Disaster Recovery S3 Bucket:** `shop-media-backup-542601847638`  
-> **Related Configs:** [index.ts](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts), [doc/03-rds-connection-guide.md](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/doc/03-rds-connection-guide.md)
+> **Related Configs:** [index.ts](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts), [doc/03-rds-connection-guide.md](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/doc/03-rds-connection-guide.md)
 
 ---
 
@@ -596,7 +596,7 @@ Here is an automated bash script that executes both RDS snapshotting, logical da
 ```bash
 #!/usr/bin/env bash
 # ==============================================================================
-# hello-k8s Unified Daily Backup Script
+# kendrick-shop Unified Daily Backup Script
 # Backs up AWS RDS PostgreSQL + Amazon S3 Media Bucket
 # ==============================================================================
 set -euo pipefail
@@ -615,7 +615,7 @@ echo "=== [1/3] Initiating RDS Physical Snapshot: ${SNAPSHOT_NAME} ==="
 aws rds create-db-snapshot \
   --db-instance-identifier "$RDS_INSTANCE" \
   --db-snapshot-identifier "$SNAPSHOT_NAME" \
-  --tags Key=Type,Value=AutomatedDaily Key=Project,Value=hello-k8s \
+  --tags Key=Type,Value=AutomatedDaily Key=Project,Value=kendrick-shop \
   --region "$REGION" > /dev/null
 
 echo "=== [2/3] Generating Logical pg_dump via Kubernetes ==="

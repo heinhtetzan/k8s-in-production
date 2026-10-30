@@ -11,7 +11,7 @@
 
 ## 1. Design & Architecture with Diagram
 
-The `hello-k8s` cloud platform on AWS is architected as an enterprise-grade, highly-available, multi-tier deployment spanning two Availability Zones (`ap-southeast-2a` and `ap-southeast-2b`) in Sydney (`ap-southeast-2`). It seamlessly connects Infrastructure as Code (Pulumi TypeScript), managed container orchestration (Amazon EKS), relational database storage (Amazon RDS PostgreSQL 16), and autonomous scaling policies.
+The `kendrick-shop` cloud platform on AWS is architected as an enterprise-grade, highly-available, multi-tier deployment spanning two Availability Zones (`ap-southeast-2a` and `ap-southeast-2b`) in Sydney (`ap-southeast-2`). It seamlessly connects Infrastructure as Code (Pulumi TypeScript), managed container orchestration (Amazon EKS), relational database storage (Amazon RDS PostgreSQL 16), and autonomous scaling policies.
 
 ### 📐 End-to-End System Architecture Diagram
 
@@ -197,7 +197,7 @@ Depending on traffic profile and deployment mode, the infrastructure cost breaks
 
 ## 3. Executive Summary & Live Health Status
 
-Your Amazon EKS cluster is fully operational, healthy, and serving live traffic across 2 worker nodes and 11 running pods. The live AWS infrastructure state aligns closely with the declared Pulumi Infrastructure-as-Code ([index.ts](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts), [Pulumi.dev.yaml](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/Pulumi.dev.yaml)) and Kubernetes deployment manifests ([`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks)).
+Your Amazon EKS cluster is fully operational, healthy, and serving live traffic across 2 worker nodes and 11 running pods. The live AWS infrastructure state aligns closely with the declared Pulumi Infrastructure-as-Code ([index.ts](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts), [Pulumi.dev.yaml](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/Pulumi.dev.yaml)) and Kubernetes deployment manifests ([`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks)).
 
 Key highlights of your live cluster:
 - **100% Workload Health:** All 11 pods across 4 deployments and 2 daemonsets are in the `Running` state.
@@ -211,19 +211,19 @@ Key highlights of your live cluster:
 
 | Category | IaC / Configuration (`index.ts`, `Pulumi.dev.yaml`, `k8s/eks/`) | Live Console Screenshot (`ss`) | Analysis & Implications |
 | :--- | :--- | :--- | :--- |
-| **Cluster Name** | `name: "shop-eks-cluster"` ([index.ts#L128](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L128)) | `shop-eks-cluster` | **Exact Match.** Pulumi successfully provisioned the named cluster. |
-| **Resource Tags** | `Environment: "dev"`, `Project: "hello-k8s"` ([index.ts#L140-L142](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L140-L142)) | 3 Tags: `Project=hello-k8s`, `Environment=dev`, `Name=shop-cluster-eksCluster` | **Exact Match.** Pulumi appended internal resource name tag to user tags. |
-| **Worker Nodes** | `instanceType: "t3.small"`, `desiredCapacity: 2`, `minSize: 2`, `maxSize: 6` ([index.ts#L133-L136](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L133-L136)) | `Nodes: 2`, `Node groups: 0` | **Expected Match.** 2 nodes running with ASG scaling up to 6 instances. `Node groups: 0` because Pulumi's `@pulumi/eks.Cluster` creates an EC2 Auto Scaling Group directly rather than an EKS Managed Node Group. |
-| **Workload Pods** | 5 app replicas defined in [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks) + system pods | `Pods: 11` (100% Running) | **Exact Match.** 5 app pods (`api-app` x2, `shop-app` x2, `shop-dashboard` x1) + 6 cluster daemon/system pods. |
+| **Cluster Name** | `name: "shop-eks-cluster"` ([index.ts#L128](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L128)) | `shop-eks-cluster` | **Exact Match.** Pulumi successfully provisioned the named cluster. |
+| **Resource Tags** | `Environment: "dev"`, `Project: "kendrick-shop"` ([index.ts#L140-L142](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L140-L142)) | 3 Tags: `Project=kendrick-shop`, `Environment=dev`, `Name=shop-cluster-eksCluster` | **Exact Match.** Pulumi appended internal resource name tag to user tags. |
+| **Worker Nodes** | `instanceType: "t3.small"`, `desiredCapacity: 2`, `minSize: 2`, `maxSize: 6` ([index.ts#L133-L136](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L133-L136)) | `Nodes: 2`, `Node groups: 0` | **Expected Match.** 2 nodes running with ASG scaling up to 6 instances. `Node groups: 0` because Pulumi's `@pulumi/eks.Cluster` creates an EC2 Auto Scaling Group directly rather than an EKS Managed Node Group. |
+| **Workload Pods** | 5 app replicas defined in [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks) + system pods | `Pods: 11` (100% Running) | **Exact Match.** 5 app pods (`api-app` x2, `shop-app` x2, `shop-dashboard` x1) + 6 cluster daemon/system pods. |
 | **Deployments** | 3 app deployments (`api-app`, `shop-app`, `shop-dashboard`) | `Deployments: 4` (100% Running) | **Exact Match.** 3 application deployments + 1 system deployment (`coredns`). |
 | **DaemonSets** | Implicit from AWS EKS defaults | `DaemonSets: 2` (100% Running) | **Exact Match.** 1 `aws-node` (VPC CNI) + 1 `kube-proxy` running across both nodes. |
 | **ReplicaSets** | Managed by Kubernetes deployment rollouts | `ReplicaSets: 10` | **Healthy.** Indicates revision history from earlier rollouts/updates (e.g. v1 to v2 tag updates in CI/CD). |
 | **Networking & Subnets**| 2 Public Subnets (`10.0.1.0/24`, `10.0.2.0/24`) + 2 Private Subnets (`10.0.10.0/24`, `10.0.20.0/24`) | 4 Subnets attached to VPC `vpc-0d78199892ebb8a3d` | **Exact Match.** All 4 subnets attached across 2 Availability Zones (`ap-southeast-2a` / `ap-southeast-2b`). |
 | **API Server Endpoint** | Pulumi default (public) | `API server endpoint access: Public`, Allowlist `0.0.0.0/0` | **Publicly accessible.** Convenient for local `kubectl` and GitHub Actions CI/CD; open to all IPs. |
-| **OIDC / Pod Identity** | `createOidcProvider: false` ([index.ts#L137](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L137)) | `OIDC identity providers: 0`, `Pod Identities: 0` | **Intentional Match.** OpenID Connect IAM provider disabled due to AWS account SCP restriction. |
+| **OIDC / Pod Identity** | `createOidcProvider: false` ([index.ts#L137](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L137)) | `OIDC identity providers: 0`, `Pod Identities: 0` | **Intentional Match.** OpenID Connect IAM provider disabled due to AWS account SCP restriction. |
 | **Authentication Mode** | Default EKS Access Management | `EKS API and ConfigMap`, `IAM access entries: 5` | **Hybrid Auth Mode.** Cluster supports both modern EKS Access Entries and legacy `aws-auth` ConfigMap. |
 | **Add-ons** | Essential networking only: `vpc-cni`, `kube-proxy` | `Add-ons: 2` (`Active`) | **Minimal & Lightweight.** All monitoring and observability add-ons removed. Zero background monitoring agents running on nodes. |
-| **Observability** | Fully disabled: `enabledClusterLogTypes: []` in [index.ts#L140](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L140), all telemetry add-ons removed | Control plane logs disabled, Container Insights & Network Flow Monitor removed | **Zero Telemetry Cost.** Completely eliminates all CloudWatch monitoring, tracing, metrics, and log ingestion charges. |
+| **Observability** | Fully disabled: `enabledClusterLogTypes: []` in [index.ts#L140](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L140), all telemetry add-ons removed | Control plane logs disabled, Container Insights & Network Flow Monitor removed | **Zero Telemetry Cost.** Completely eliminates all CloudWatch monitoring, tracing, metrics, and log ingestion charges. |
 | **KMS Encryption** | No KMS customer managed key specified | `Encryption key: AWS owned`, `KMS key ID: -` | **Standard.** EKS default AWS-managed storage encryption; Kubernetes etcd secrets are not envelope-encrypted. |
 | **Deletion Protection** | Not explicitly enabled | `Deletion protection: Disabled` | **Development mode.** Allows teardown via `pulumi destroy` without manual unlock. |
 
@@ -277,7 +277,7 @@ The 11 running pods break down as follows:
 
 - **Node Sizing:** 2x `t3.small` instances (2 vCPUs, 2 GB RAM each).
   - Total compute capacity: ~4 vCPUs and ~4 GB RAM across the cluster.
-  - Pod resource requests in [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks) allocate `100m` CPU and `128Mi` RAM per app pod.
+  - Pod resource requests in [`k8s/eks/`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks) allocate `100m` CPU and `128Mi` RAM per app pod.
   - This sizing accommodates the current 11 pods with headroom for spikes (limits up to 500m / 512Mi).
 - **Self-Managed ASG vs. EKS Managed Node Group:**
   - In the cluster configuration, **Node groups = 0**.
@@ -288,7 +288,7 @@ The 11 running pods break down as follows:
 
 ### 5.3 Networking & Ingress Routing Architecture (ALB Ingress)
 
-Traffic enters through a single multi-AZ **AWS Application Load Balancer (`shop-ingress`)** deployed across both public subnets via the AWS Load Balancer Controller, matching [`k8s/eks/05-ingress.yaml`](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/k8s/eks/05-ingress.yaml). 
+Traffic enters through a single multi-AZ **AWS Application Load Balancer (`shop-ingress`)** deployed across both public subnets via the AWS Load Balancer Controller, matching [`k8s/eks/05-ingress.yaml`](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/k8s/eks/05-ingress.yaml). 
 
 With `alb.ingress.kubernetes.io/target-type: ip`, the ALB terminates TLS using the ACM wildcard certificate and forwards traffic **directly to pod IP addresses** assigned by the AWS VPC CNI, eliminating intermediate NodePort hops and `kube-proxy` latency:
 
@@ -333,17 +333,17 @@ sequenceDiagram
   - **Pros:** Full visibility into cluster API calls, RBAC authorization events, and controller decisions.
   - **Audit Trail:** Crucial for tracking user and CI/CD operations via IAM Access Entries.
 - **Resource Tags:** 
-  - `Project: hello-k8s`
+  - `Project: kendrick-shop`
   - `Environment: dev`
   - `Name: shop-cluster-eksCluster`
-  - These match lines 141–144 in [index.ts](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts).
+  - These match lines 141–144 in [index.ts](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts).
 
 ---
 
 ### 5.5 Observability, Prometheus & CloudWatch
 
 - **Prometheus Scrapers:** The backend API exposes application telemetry at `GET /metrics` in OpenMetrics format. Amazon Managed Service for Prometheus scraper can be attached if desired.
-- **CloudWatch Container Insights:** Enabled via the `amazon-cloudwatch-observability` EKS add-on and `CloudWatchAgentServerPolicy` attached to the node role in [index.ts#L151-L166](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/index.ts#L151-L166).
+- **CloudWatch Container Insights:** Enabled via the `amazon-cloudwatch-observability` EKS add-on and `CloudWatchAgentServerPolicy` attached to the node role in [index.ts#L151-L166](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts#L151-L166).
   - In-cluster pod logs can also be viewed live at any time using `kubectl logs <pod-name>`.
 
 ---
@@ -356,7 +356,7 @@ sequenceDiagram
 2. **Clean Separation of Concerns:**
    - Database layer completely decoupled in AWS RDS (PostgreSQL 16.10 on `db.t4g.micro`), so node restarts or cluster changes do not risk data loss.
 3. **Automated CI/CD Integration:**
-   - GitHub Actions workflow ([deploy.yml](file:///Users/kendirck/Desktop/learn/interview/hello-k8s/.github/workflows/deploy.yml)) handles automated testing, Docker buildx containerization (linux/amd64), push to Amazon ECR, and deployment rollouts via `kubectl rollout status`.
+   - GitHub Actions workflow ([deploy.yml](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/.github/workflows/deploy.yml)) handles automated testing, Docker buildx containerization (linux/amd64), push to Amazon ECR, and deployment rollouts via `kubectl rollout status`.
 
 ---
 

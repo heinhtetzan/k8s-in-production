@@ -17,7 +17,7 @@ metadata:
   name: shop-ingress
   labels:
     app.kubernetes.io/name: shop-ingress
-    app.kubernetes.io/part-of: hello-k8s
+    app.kubernetes.io/part-of: kendrick-shop
   annotations:
     # Tell Kubernetes to use the AWS Load Balancer Controller
     kubernetes.io/ingress.class: alb

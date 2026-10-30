@@ -1,6 +1,6 @@
 # End-to-End Implementation Plan (Step-by-Step)
 
-This document provides a complete, chronological implementation plan to take the `hello-k8s` project from local development to a fully automated, production-grade cloud deployment on AWS EKS and RDS with CI/CD.
+This document provides a complete, chronological implementation plan to take the `kendrick-shop` project from local development to a fully automated, production-grade cloud deployment on AWS EKS and RDS with CI/CD.
 
 ---
 

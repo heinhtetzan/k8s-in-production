@@ -1,6 +1,6 @@
-# AWS EKS & RDS Infrastructure (hello-k8s)
+# AWS EKS & RDS Infrastructure (kendrick-shop)
 
-Provisions the complete cloud infrastructure required to run the `hello-k8s` full-stack application on AWS (Hono + Bun Backend, TanStack Start Frontend, and AWS RDS PostgreSQL 16) with Route 53 custom domain support and SSL.
+Provisions the complete cloud infrastructure required to run the `kendrick-shop` full-stack application on AWS (Hono + Bun Backend, TanStack Start Frontend, and AWS RDS PostgreSQL 16) with Route 53 custom domain support and SSL.
 
 ---
 
