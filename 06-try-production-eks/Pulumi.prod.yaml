@@ -1,0 +1,5 @@
+encryptionsalt: v1:e+TOeIPDoKA=:v1:tBioutLuzfUvmgy8:gDmvh27A8+PtTrmM9NSdETLBaCOFgg==
+config:
+  aws:region: ap-southeast-2
+  infra:dbPassword:
+    secure: v1:YyHYXr8j8wkUi9XR:QpuSPAAQRUwqtfktjxrY2Bj8t16qAG7x

@@ -180,6 +180,9 @@ export const deployerAccessPolicy = new aws.eks.AccessPolicyAssociation("github-
   },
 });
 
+// Note: mac-cli is the IAM identity that created the cluster, so AWS EKS automatically
+// registers it as an Access Entry with AmazonEKSClusterAdminPolicy upon creation.
+
 
 // ============================================================================
 // 3. AWS RDS PostgreSQL Database
