@@ -3,3 +3,6 @@ config:
   aws:region: ap-southeast-2
   infra:dbPassword:
     secure: v1:YyHYXr8j8wkUi9XR:QpuSPAAQRUwqtfktjxrY2Bj8t16qAG7x
+  infra:shopElbHost: a4fb4136650ee4f08b775224ce5ab245-443733933.ap-southeast-2.elb.amazonaws.com
+  infra:apiElbHost: a81b1d71d32724206a3bd77353234618-25810465.ap-southeast-2.elb.amazonaws.com
+  infra:dashboardElbHost: af4e8e206eecf4525b1a2dedd07d14c3-558468982.ap-southeast-2.elb.amazonaws.com

@@ -5,7 +5,7 @@
 > **RDS Instance Identifier:** `shop-postgres-db` (PostgreSQL 16.10, `db.t4g.micro`)  
 > **Primary S3 Media Bucket:** `shop-media-542601847638`  
 > **Disaster Recovery S3 Bucket:** `shop-media-backup-542601847638`  
-> **Related Configs:** [index.ts](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/index.ts), [doc/03-rds-connection-guide.md](file:///Users/kendirck/Desktop/learn/interview/kendrick-shop/doc/03-rds-connection-guide.md)
+> **Related Configs:** [`index.ts`](../index.ts), [`doc/03-rds-connection-guide.md`](./03-rds-connection-guide.md)
 
 ---
 
