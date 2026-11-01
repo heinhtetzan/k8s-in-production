@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: api-config
-data:
-  MESSAGE: "Hello Kubernetes from ConfigMap!"
-
