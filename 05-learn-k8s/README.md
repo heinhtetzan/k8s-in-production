@@ -29,16 +29,14 @@ flowchart TD
     L1["01. What is Kubernetes?<br/>Why K8s, Features, Docker vs K8s, Local & Cloud"] --> L2["02. Local K8s with Kind<br/>Kind CLI, kubectl boundary & image loading secret"]
     L2 --> L3["03. Hands-On with kubectl<br/>Contexts, Pods, Deployments & Port-Forwarding"]
     L3 --> L4["04. Services & Networking<br/>ClusterIP, NodePort, LoadBalancer & CoreDNS"]
-    L4 --> L5["05. Configuration & Secrets<br/>ConfigMaps, Secrets & Environment Decoupling"]
-    L5 --> L6["06. Health & Storage<br/>Liveness/Readiness Probes, PV & PVC"]
-    L6 --> L7["07. Rollouts & Autoscaling<br/>RollingUpdate, maxSurge, HPA & Karpenter"]
-    L7 --> L8["08. Production Readiness<br/>k9s, Security, Limits & Migration to EKS"]
+    L4 --> L5["05. Configuration & Secrets<br/>ConfigMaps, Secrets & MySQL Lab"]
+    L5 --> L6["06. What You Need to Learn More<br/>Probes, Ingress, HPA & Bridge to Production EKS"]
 
     classDef active fill:#1f1929,stroke:#7c5295,stroke-width:2px,color:#ffffff;
-    classDef planned fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#ffffff;
+    classDef capstone fill:#15241d,stroke:#22c55e,stroke-width:2px,color:#ffffff;
 
     class L1,L2,L3,L4,L5 active;
-    class L6,L7,L8 planned;
+    class L6 capstone;
 ```
 
 ---
@@ -52,7 +50,7 @@ flowchart TD
 | **03** | **[Hands-On with kubectl: Contexts, Pods, Deployments & Port-Forwarding](./03-kubectl-commands-pods-and-networking.md)** | • Context management (`get-contexts`, `use-context`)<br>• Pod creation (imperative vs `--dry-run=client -o yaml`)<br>• Deployments & self-healing verification<br>• Network testing via `kubectl port-forward` | ✅ Ready |
 | **04** | **[Kubernetes Services & Internal Networking](./04-services-and-networking.md)** | • The ephemeral Pod IP problem<br>• Service types: `ClusterIP`, `NodePort`, `LoadBalancer`<br>• Port mapping (`port` vs `targetPort` vs `nodePort`)<br>• In-cluster DNS with CoreDNS & round-robin load balancing | ✅ Ready |
 | **05** | **[Application Configuration & Secrets (MySQL Lab)](./05-application-configuration-and-secrets.md)** | • The 12-factor decoupling principle<br>• ConfigMaps (env vars & mounting custom `my.cnf`)<br>• Secrets (`Opaque`, base64 myth, etcd encryption)<br>• Hands-on MySQL deployment & client query lab | ✅ Ready |
-| **06** | **Health Checks & Persistent Storage** | • Startup, Liveness, and Readiness probes<br>• PersistentVolumes (PV), Claims (PVC), StorageClasses | ⏳ Next |
+| **06** | **[What You Need to Learn More & Bridge to Production EKS](./06-what-you-need-to-learn-more.md)** | • Probes & graceful termination (`preStop` hooks)<br>• CPU/Memory requests & limits<br>• AWS ALB Ingress & Wildcard ACM SSL<br>• Horizontal Pod Autoscaler (HPA)<br>• Managed AWS RDS vs StatefulSets<br>• External Secrets Operator & Capstone Roadmap | ✅ Ready |
 | **07** | **Rollouts & Autoscaling** | • RollingUpdate tuning (`maxSurge`, `maxUnavailable`)<br>• Rollback commands (`rollout undo`), HPA autoscaling | ⏳ Upcoming |
 | **08** | **Observability, Security & Production Patterns** | • Mastering `k9s` and `kubectl describe/logs/exec`<br>• Resource requests/limits, SecurityContext & EKS promotion | ⏳ Upcoming |
 

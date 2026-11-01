@@ -523,9 +523,11 @@ In this lesson, we established complete control over application configuration:
 ---
 
 ### 🗺️ Next Lesson in Module 05
-In **[`06-health-checks-and-storage.md`](./06-health-checks-and-storage.md)**, we tackle data persistence and application health:
-- Why MySQL data is lost when Pods restart without persistent storage.
-- **PersistentVolumes (PV)** and **PersistentVolumeClaims (PVC)**.
-- Dynamic storage provisioning with **StorageClasses**.
-- Application health probes: **Startup**, **Liveness**, and **Readiness** probes.
+In **[`06-what-you-need-to-learn-more.md`](./06-what-you-need-to-learn-more.md)**, we bridge our local knowledge directly into the production EKS capstone project:
+- Probes & graceful termination (`preStop` hooks for zero 502s).
+- CPU/Memory requests & limits (QoS and noisy neighbor defense).
+- AWS ALB Ingress & Wildcard ACM SSL termination.
+- Horizontal Pod Autoscaler (HPA) and AWS VPC CNI considerations.
+- Managed AWS RDS vs StatefulSets & External Secrets Operator (ESO).
+- Full reading map and deployment quickstart for [`06-try-production-eks`](file:///Users/kendirck/Desktop/learn/k8s-in-production/06-try-production-eks/).
 
