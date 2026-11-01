@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: hello-api
+  name: hello-api
+spec:
+  containers:
+  - image: hello-api:latest
+    name: hello-api
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 3000
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+

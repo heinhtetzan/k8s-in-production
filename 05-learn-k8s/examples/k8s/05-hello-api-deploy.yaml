@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: hello-api-deploy
+  name: hello-api-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-api-deploy
+  template:
+    metadata:
+      labels:
+        app: hello-api-deploy
+    spec:
+      containers:
+      - image: hello-api:latest
+        name: hello-api
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MESSAGE
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: MESSAGE
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secret
+              key: API_KEY
+        resources: {}
+
