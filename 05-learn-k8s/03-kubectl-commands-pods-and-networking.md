@@ -219,11 +219,11 @@ A **Pod** is the smallest execution unit in Kubernetes. Let's look at the two di
 }}%%
 flowchart TD
     subgraph Imperative["Imperative Approach (CLI Execution)"]
-        RunCmd["kubectl run nginx-app --image=nginx:alpine"] --> API1["API Server executes immediately"]
+        RunCmd["kubectl run task-api --image=task-api:1.0.0 --port=3000"] --> API1["API Server executes immediately"]
     end
 
     subgraph Declarative["Declarative Approach (Industry Standard)"]
-        DryRunCmd["kubectl run nginx-app --image=nginx:alpine<br/>--dry-run=client -o yaml > pod.yaml"] --> Manifest["pod.yaml (Version Controlled in Git)"]
+        DryRunCmd["kubectl run task-api --image=task-api:1.0.0 --port=3000<br/>--dry-run=client -o yaml > pod.yaml"] --> Manifest["pod.yaml (Version Controlled in Git)"]
         Manifest --> ApplyCmd["kubectl apply -f pod.yaml"]
         ApplyCmd --> API2["API Server reconciles Desired State"]
     end
@@ -238,25 +238,28 @@ flowchart TD
 
 ### ① Create a Pod: Imperative vs. The `--dry-run=client` Pro Trick
 
+We will use our custom ElysiaJS **`task-api:1.0.0`** container image that we built and loaded into Kind in Lesson 02.
+
 #### Option A: Immediate Imperative Run
 ```bash
-kubectl run hello-api --image=nginx:alpine
+kubectl run task-api --image=task-api:1.0.0 --port=3000
 ```
 *Output:*
 ```text
-pod/hello-api created
+pod/task-api created
 ```
 
 #### Option B: The Pro Dry-Run Trick (Generate YAML Template in 1 Second)
 Writing Kubernetes YAML from memory is error-prone. Senior engineers use the **client-side dry-run flag** to generate valid manifests instantly:
 
 ```bash
-kubectl run hello-api --image=nginx:alpine --dry-run=client -o yaml > pod.yaml
+kubectl run task-api --image=task-api:1.0.0 --port=3000 --dry-run=client -o yaml > pod.yaml
 ```
 
 **Deconstructing the command:**
-- `kubectl run hello-api`: Desired Pod name.
-- `--image=nginx:alpine`: Container image to pull.
+- `kubectl run task-api`: Desired Pod name.
+- `--image=task-api:1.0.0`: Our custom ElysiaJS image loaded in Kind.
+- `--port=3000`: Container application port.
 - `--dry-run=client`: **Do NOT contact the cluster or create the Pod**. Validate the flags locally on your laptop.
 - `-o yaml`: Output the generated specification as standard YAML format.
 - `> pod.yaml`: Redirect output into a file.
@@ -268,12 +271,15 @@ kind: Pod
 metadata:
   creationTimestamp: null
   labels:
-    run: hello-api
-  name: hello-api
+    run: task-api
+  name: task-api
 spec:
   containers:
-  - image: nginx:alpine
-    name: hello-api
+  - image: task-api:1.0.0
+    name: task-api
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 3000
     resources: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always
@@ -290,7 +296,7 @@ kubectl apply -f pod.yaml
 ```
 *Output:*
 ```text
-pod/hello-api created
+pod/task-api created
 ```
 
 #### Inspect Running Pods
@@ -299,8 +305,8 @@ kubectl get pods
 ```
 *Output:*
 ```text
-NAME        READY   STATUS    RESTARTS   AGE
-hello-api   1/1     Running   0          25s
+NAME       READY   STATUS    RESTARTS   AGE
+task-api   1/1     Running   0          15s
 ```
 
 #### Detailed View with IP and Node Placement
@@ -309,8 +315,8 @@ kubectl get pods -o wide
 ```
 *Output:*
 ```text
-NAME        READY   STATUS    RESTARTS   AGE   IP           NODE                      NOMINATED NODE   READINESS GATES
-hello-api   1/1     Running   0          45s   10.244.0.5   k8s-local-control-plane   <none>           <none>
+NAME       READY   STATUS    RESTARTS   AGE   IP           NODE                      NOMINATED NODE   READINESS GATES
+task-api   1/1     Running   0          30s   10.244.0.5   k8s-local-control-plane   <none>           <none>
 ```
 
 > [!NOTE]
@@ -322,7 +328,7 @@ hello-api   1/1     Running   0          45s   10.244.0.5   k8s-local-control-pl
 
 #### Delete by Name (Imperative):
 ```bash
-kubectl delete pod hello-api
+kubectl delete pod task-api
 ```
 
 #### Delete by Manifest (Declarative):
@@ -331,7 +337,7 @@ kubectl delete -f pod.yaml
 ```
 *Output:*
 ```text
-pod "hello-api" deleted
+pod "task-api" deleted
 ```
 
 ---
@@ -366,13 +372,13 @@ In real-world systems, we wrap our Pods inside a **Deployment**:
 flowchart TD
     subgraph DeployHierarchy["The Workload Hierarchy"]
         direction TB
-        Dep["Deployment: web-deploy<br/>(Manages updates & rollouts)"]
-        RS["ReplicaSet: web-deploy-74f8<br/>(Guarantees replica count = 3)"]
+        Dep["Deployment: task-api<br/>(Manages updates & rollouts)"]
+        RS["ReplicaSet: task-api-74f8<br/>(Guarantees replica count = 3)"]
         
         Dep --> RS
-        RS --> P1["Pod: web-deploy-74f8-1"]
-        RS --> P2["Pod: web-deploy-74f8-2"]
-        RS --> P3["Pod: web-deploy-74f8-3"]
+        RS --> P1["Pod: task-api-74f8-1"]
+        RS --> P2["Pod: task-api-74f8-2"]
+        RS --> P3["Pod: task-api-74f8-3"]
     end
 
     classDef c1 fill:#1f1929,stroke:#7c5295,stroke-width:1.5px,color:#ffffff;
@@ -389,7 +395,7 @@ flowchart TD
 Just like `kubectl run`, you can generate clean Deployment YAML without writing it by hand:
 
 ```bash
-kubectl create deployment web-app --image=nginx:alpine --replicas=3 --dry-run=client -o yaml > deployment.yaml
+kubectl create deployment task-api --image=task-api:1.0.0 --replicas=3 --dry-run=client -o yaml > deployment.yaml
 ```
 
 Inspect `deployment.yaml`:
@@ -398,23 +404,24 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: web-app
-  name: web-app
+    app: task-api
+  name: task-api
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: web-app
+      app: task-api
   template:
     metadata:
       labels:
-        app: web-app
+        app: task-api
     spec:
       containers:
-      - image: nginx:alpine
-        name: nginx
+      - image: task-api:1.0.0
+        name: task-api
+        imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 80
+        - containerPort: 3000
 ```
 
 Apply the deployment:
@@ -423,35 +430,35 @@ kubectl apply -f deployment.yaml
 ```
 *Output:*
 ```text
-deployment.apps/web-app created
+deployment.apps/task-api created
 ```
 
 Verify the 3 running replicas:
 ```bash
 kubectl get deployments
-kubectl get pods -l app=web-app
+kubectl get pods -l app=task-api
 ```
 *Output:*
 ```text
-NAME                       READY   STATUS    RESTARTS   AGE
-web-app-585449566-4k8pt    1/1     Running   0          18s
-web-app-585449566-9zx2m    1/1     Running   0          18s
-web-app-585449566-qj99w    1/1     Running   0          18s
+NAME                        READY   STATUS    RESTARTS   AGE
+task-api-585449566-4k8pt    1/1     Running   0          18s
+task-api-585449566-9zx2m    1/1     Running   0          18s
+task-api-585449566-qj99w    1/1     Running   0          18s
 ```
 
 ### 🧪 Test Self-Healing in Real Time
 Delete one of the pods manually:
 ```bash
-kubectl delete pod web-app-585449566-4k8pt
+kubectl delete pod task-api-585449566-4k8pt
 ```
 
-Immediately run `kubectl get pods -l app=web-app`. You will see the ReplicaSet Controller already spawned a brand-new Pod within milliseconds to maintain the desired count of 3!
+Immediately run `kubectl get pods -l app=task-api`. You will see the ReplicaSet Controller already spawned a brand-new Pod within milliseconds to maintain the desired count of 3!
 
 ---
 
 ## 5. Network Testing with `kubectl port-forward`
 
-Because Kubernetes Pods run inside an isolated internal virtual network, typing `http://10.244.0.5` in your Mac or Windows browser will fail with `Connection Timed Out`.
+Because Kubernetes Pods run inside an isolated internal virtual network, typing `http://10.244.0.5:3000` in your Mac or Windows browser will fail with `Connection Timed Out`.
 
 To test Pods and Deployments locally without provisioning complex cloud load balancers or Ingress controllers, Kubernetes provides **`kubectl port-forward`**.
 
@@ -475,18 +482,18 @@ To test Pods and Deployments locally without provisioning complex cloud load bal
 sequenceDiagram
     autonumber
     actor Dev as Developer / Browser
-    participant HostPort as localhost:8080 (Laptop)
+    participant HostPort as localhost:3000 (Laptop)
     participant KubeCLI as kubectl port-forward
     participant APIServer as kube-apiserver (Port 6443)
     participant Kubelet as kubelet (Worker Node)
-    participant Pod as Pod Container (Port 80)
+    participant Pod as Pod Container (Port 3000)
 
-    Dev->>HostPort: curl http://localhost:8080
+    Dev->>HostPort: curl http://localhost:3000/info
     HostPort->>KubeCLI: Local socket intercept
     KubeCLI->>APIServer: Encrypted SPDY/WebSocket Tunnel
     APIServer->>Kubelet: Proxy port connection
-    Kubelet->>Pod: Deliver TCP payload to Container Port 80
-    Pod-->>Dev: HTTP 200 OK (Nginx HTML)
+    Kubelet->>Pod: Deliver TCP payload to Container Port 3000
+    Pod-->>Dev: HTTP 200 OK (Elysia JSON)
 ```
 
 ---
@@ -498,53 +505,88 @@ kubectl port-forward <RESOURCE_TYPE>/<RESOURCE_NAME> <LOCAL_PORT>:<CONTAINER_POR
 ```
 
 ```
-       kubectl port-forward pod/hello-api 8080:80
-                            │             │    │
-       Target Resource ─────┘             │    │
-       Local Port (on your machine) ──────┘    │
-       Container Port (inside the Pod) ────────┘
+       kubectl port-forward pod/task-api 3000:3000
+                            │            │    │
+       Target Resource ─────┘            │    │
+       Local Port (on your machine) ─────┘    │
+       Container Port (inside the Pod) ───────┘
 ```
 
 ---
 
-### Hands-on Verification: Testing a Pod
+### Hands-on Verification: Testing `task-api`
 
 1. Run the port-forward command in your terminal:
 ```bash
-kubectl port-forward pod/hello-api 8080:80
+kubectl port-forward pod/task-api 3000:3000
 ```
 *Output:*
 ```text
-Forwarding from 127.0.0.1:8080 -> 80
-Forwarding from [::1]:8080 -> 80
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
 ```
 
-2. Open a separate terminal window and send an HTTP request:
+2. Open a separate terminal window and test our 3 sample routes:
+
+#### 1. Test Welcome Route:
 ```bash
-curl http://localhost:8080
+curl http://localhost:3000/
 ```
 *Response:*
-```html
-<!DOCTYPE html>
-<html>
-<head>
-<title>Welcome to nginx!</title>
-...
+```json
+{
+  "app": "task-api",
+  "framework": "ElysiaJS (Bun)",
+  "message": "🦊 Hello from Task API running inside Kubernetes!",
+  "servedByPod": "task-api",
+  "timestamp": "2026-11-01T11:15:00.000Z"
+}
 ```
 
-In your port-forward terminal, you will see real-time connection logging:
-```text
-Handling connection for 8080
+#### 2. Test Pod & Runtime Info Route:
+```bash
+curl http://localhost:3000/info
+```
+*Response:*
+```json
+{
+  "podName": "task-api",
+  "nodeEnv": "production",
+  "port": 3000,
+  "uptimeSeconds": 42,
+  "database": {
+    "status": "unconfigured",
+    "details": "Running without MySQL backend"
+  }
+}
+```
+
+#### 3. Test Tasks / Todos Route:
+```bash
+curl http://localhost:3000/tasks
+```
+*Response:*
+```json
+{
+  "pod": "task-api",
+  "source": "memory-fallback",
+  "count": 3,
+  "tasks": [
+    { "id": 1, "title": "Learn Kubernetes Basics", "completed": true },
+    { "id": 2, "title": "Master Kind & kubectl", "completed": true },
+    { "id": 3, "title": "Connect to MySQL", "completed": false }
+  ]
+}
 ```
 
 ---
 
 ### Pro Tip: Port-Forwarding a Deployment Directly
 
-Instead of finding an ephemeral, randomized Pod name (e.g., `web-app-585449566-9zx2m`), you can port-forward directly to a **Deployment**:
+Instead of finding an ephemeral, randomized Pod name (e.g., `task-api-585449566-9zx2m`), you can port-forward directly to the **Deployment**:
 
 ```bash
-kubectl port-forward deployment/web-app 8080:80
+kubectl port-forward deployment/task-api 3000:3000
 ```
 
 `kubectl` will automatically pick one of the healthy, ready replica Pods managed by that Deployment and forward all traffic to it!

@@ -374,49 +374,50 @@ shop-api-svc   10.244.1.14:3000,10.244.2.28:3000   4m
 
 ---
 
-## 7. Complete Hands-On Lab: Deploy, Expose & Verify Load Balancing
+## 7. Complete Hands-On Lab: Deploy, Expose & Verify Load Balancing with `task-api`
 
-Let's verify internal networking, CoreDNS resolution, and round-robin load balancing in your local Kind cluster.
+Let's verify internal networking, CoreDNS resolution, and round-robin load balancing using our custom ElysiaJS **`task-api:1.0.0`** image in your local Kind cluster.
 
-### Step 1: Deploy a 3-Replica Web Service
-Create a Deployment using NGINX that serves distinct container hostnames:
+### Step 1: Deploy a 3-Replica `task-api` Service
+Create a Deployment and Service manifest:
 
 ```yaml
 # lab-networking.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: echo-api
+  name: task-api
   labels:
-    app: echo-api
+    app: task-api
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: echo-api
+      app: task-api
   template:
     metadata:
       labels:
-        app: echo-api
+        app: task-api
     spec:
       containers:
-        - name: web
-          image: nginxdemos/hello:plain-text
+        - name: task-api
+          image: task-api:1.0.0
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 3000
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: echo-service
+  name: task-api-service
 spec:
   type: ClusterIP
   selector:
-    app: echo-api
+    app: task-api
   ports:
     - name: http
-      port: 80
-      targetPort: 80
+      port: 80          # Service port (clean default HTTP)
+      targetPort: 3000  # ElysiaJS container port
 ```
 
 Apply the manifest:
@@ -426,23 +427,23 @@ kubectl apply -f lab-networking.yaml
 
 Verify that 3 Pods and the Service are running:
 ```bash
-kubectl get pods -l app=echo-api -o wide
-kubectl get svc echo-service
+kubectl get pods -l app=task-api -o wide
+kubectl get svc task-api-service
 ```
 *Output:*
 ```text
-NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
-echo-service   ClusterIP   10.96.18.240   <none>        80/TCP    25s
+NAME               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
+task-api-service   ClusterIP   10.96.18.240   <none>        80/TCP    25s
 ```
 
 Check the active endpoints:
 ```bash
-kubectl get endpoints echo-service
+kubectl get endpoints task-api-service
 ```
 *Output:*
 ```text
-NAME           ENDPOINTS                                            AGE
-echo-service   10.244.0.7:80,10.244.0.8:80,10.244.0.9:80            35s
+NAME               ENDPOINTS                                            AGE
+task-api-service   10.244.0.7:3000,10.244.0.8:3000,10.244.0.9:3000      35s
 ```
 
 ---
@@ -459,31 +460,34 @@ Inside the `test-client` shell, test internal DNS resolution:
 
 #### 1. Query by Short Service Name:
 ```sh
-curl http://echo-service
+curl http://task-api-service/
 ```
 *Sample Response:*
-```text
-Server address: 10.244.0.7:80
-Server name: echo-api-7c4f4b986b-4k99w
-Date: 01/Nov/2026:10:45:00 +0000
-URI: /
+```json
+{
+  "app": "task-api",
+  "framework": "ElysiaJS (Bun)",
+  "message": "🦊 Hello from Task API running inside Kubernetes!",
+  "servedByPod": "task-api-7c4f4b986b-4k99w",
+  "timestamp": "2026-11-01T11:20:00.000Z"
+}
 ```
 
 #### 2. Query by Full Qualified Domain Name (FQDN):
 ```sh
-curl http://echo-service.default.svc.cluster.local
+curl http://task-api-service.default.svc.cluster.local/info
 ```
 
 #### 3. Inspect DNS Resolution:
 ```sh
-nslookup echo-service
+nslookup task-api-service
 ```
 *Output:*
 ```text
 Server:		10.96.0.10
 Address:	10.96.0.10#53
 
-Name:	echo-service.default.svc.cluster.local
+Name:	task-api-service.default.svc.cluster.local
 Address: 10.96.18.240
 ```
 
@@ -491,24 +495,26 @@ Address: 10.96.18.240
 
 ### Step 3: Observe Automatic Round-Robin Load Balancing
 
-While still inside the `test-client` shell, execute a quick loop to send 6 consecutive requests:
+Because `task-api` returns its own Pod hostname in the response, we can directly watch `kube-proxy` distribute traffic!
+
+While still inside the `test-client` shell, send 6 consecutive requests:
 
 ```sh
-for i in $(seq 1 6); do curl -s http://echo-service | grep "Server name:"; done
+for i in $(seq 1 6); do curl -s http://task-api-service/info | grep -o '"podName":"[^"]*"'; done
 ```
 
 *Output:*
 ```text
-Server name: echo-api-7c4f4b986b-4k99w
-Server name: echo-api-7c4f4b986b-x89zt
-Server name: echo-api-7c4f4b986b-9p4ql
-Server name: echo-api-7c4f4b986b-4k99w
-Server name: echo-api-7c4f4b986b-x89zt
-Server name: echo-api-7c4f4b986b-9p4ql
+"podName":"task-api-7c4f4b986b-4k99w"
+"podName":"task-api-7c4f4b986b-x89zt"
+"podName":"task-api-7c4f4b986b-9p4ql"
+"podName":"task-api-7c4f4b986b-4k99w"
+"podName":"task-api-7c4f4b986b-x89zt"
+"podName":"task-api-7c4f4b986b-9p4ql"
 ```
 
 > [!NOTE]
-> Look at the `Server name:` responses! Traffic sent to a single virtual URL (`http://echo-service`) is automatically distributed across all three distinct Pod replicas by `kube-proxy`!
+> Look at the `podName` values! Every time you curl the single virtual IP (`http://task-api-service`), traffic alternates sequentially across all three Pod replicas without an external load balancer!
 
 Exit the client shell:
 ```sh

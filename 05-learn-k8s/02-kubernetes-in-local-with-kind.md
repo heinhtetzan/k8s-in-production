@@ -317,9 +317,9 @@ flowchart LR
 This is the **#1 stumbling block** for engineers moving from Docker Compose to Kind.
 
 ### The Problem: Why `ErrImagePull` Happens
-When you build an image locally on your workstation:
+When you build our custom ElysiaJS **`task-api`** image locally on your workstation:
 ```bash
-docker build -t shop-api:1.0.0 .
+docker build -t task-api:1.0.0 ./task-api
 ```
 This image is stored exclusively in your **Host Machine's Docker Daemon**.
 
@@ -328,11 +328,11 @@ Now suppose you write a Kubernetes Pod manifest referencing that image:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: shop-api-pod
+  name: task-api-pod
 spec:
   containers:
-    - name: shop-api
-      image: shop-api:1.0.0
+    - name: task-api
+      image: task-api:1.0.0
 ```
 
 And apply it:
@@ -347,19 +347,19 @@ kubectl get pods
 *Output:*
 ```text
 NAME           READY   STATUS             RESTARTS   AGE
-shop-api-pod   0/1     ImagePullBackOff   0          18s
+task-api-pod   0/1     ImagePullBackOff   0          18s
 ```
 
 ```bash
-kubectl describe pod shop-api-pod
+kubectl describe pod task-api-pod
 ```
 *Events:*
 ```text
 Events:
   Type     Reason     Message
   ----     ------     -------
-  Normal   BackOff    Back-off pulling image "shop-api:1.0.0"
-  Warning  Failed     Failed to pull image "shop-api:1.0.0": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/shop-api:1.0.0"
+  Normal   BackOff    Back-off pulling image "task-api:1.0.0"
+  Warning  Failed     Failed to pull image "task-api:1.0.0": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/task-api:1.0.0"
 ```
 
 ### Why Did This Fail?
@@ -385,17 +385,17 @@ Kind nodes run inside Docker containers. Inside each Kind node is an **isolated 
 }}%%
 flowchart TD
     subgraph Host["Host Workstation (Laptop)"]
-        Build["1. docker build -t shop-api:1.0.0 ."] --> HostDaemon[("Host Docker Daemon<br/>(Stores shop-api:1.0.0)")]
+        Build["1. docker build -t task-api:1.0.0 ./task-api"] --> HostDaemon[("Host Docker Daemon<br/>(Stores task-api:1.0.0)")]
         
         HostDaemon -.->|❌ Isolated: Node cannot see host storage| Fail["Pod Status: ImagePullBackOff<br/>(Queried Docker Hub & failed)"]
         
-        HostDaemon ==>|✅ Solution: kind load docker-image| Bridge["kind load docker-image shop-api:1.0.0 --name k8s-local"]
+        HostDaemon ==>|✅ Solution: kind load docker-image| Bridge["kind load docker-image task-api:1.0.0 --name k8s-local"]
     end
 
     subgraph Cluster["Kind Cluster: k8s-local"]
         subgraph NodeContainer["Kind Node Container"]
-            Bridge -->|Injects image tarball via containerd| NodeCache[("Node containerd cache<br/>(Stores shop-api:1.0.0)")]
-            NodeCache -->|Kubelet pulls from local node cache| RunningPod["✅ Pod Running Successfully<br/>image: shop-api:1.0.0<br/>imagePullPolicy: IfNotPresent"]
+            Bridge -->|Injects image tarball via containerd| NodeCache[("Node containerd cache<br/>(Stores task-api:1.0.0)")]
+            NodeCache -->|Kubelet pulls from local node cache| RunningPod["✅ Pod Running Successfully<br/>image: task-api:1.0.0<br/>imagePullPolicy: IfNotPresent"]
         end
     end
 
@@ -420,7 +420,7 @@ kind load docker-image <IMAGE_NAME>:<TAG> --name <CLUSTER_NAME>
 ```
 
 ```
-                 kind load docker-image shop-api:1.0.0 --name k8s-local
+                 kind load docker-image task-api:1.0.0 --name k8s-local
                                         │               │     │
                  Image Name & Tag ──────┘               │     │
                  Flag: Cluster name ────────────────────┘     │
@@ -429,18 +429,18 @@ kind load docker-image <IMAGE_NAME>:<TAG> --name <CLUSTER_NAME>
 
 #### Step-by-Step Execution:
 ```bash
-# 1. Build image on host
-docker build -t shop-api:1.0.0 ./services/shop-api
+# 1. Build ElysiaJS task-api image on host
+docker build -t task-api:1.0.0 ./05-learn-k8s/task-api
 
 # 2. Transfer image directly into the Kind cluster nodes
-kind load docker-image shop-api:1.0.0 --name k8s-local
+kind load docker-image task-api:1.0.0 --name k8s-local
 
 # 3. Verify the image is now present inside the node's containerd cache
-docker exec -it k8s-local-control-plane crictl images | grep shop-api
+docker exec -it k8s-local-control-plane crictl images | grep task-api
 ```
 *Output:*
 ```text
-docker.io/library/shop-api   1.0.0   a1b2c3d4e5f6   28.4MB
+docker.io/library/task-api   1.0.0   a1b2c3d4e5f6   42.1MB
 ```
 
 ---
@@ -464,85 +464,86 @@ Even after running `kind load docker-image`, your Pod can still fail if you omit
 apiVersion: v1
 kind: Pod
 metadata:
-  name: shop-api-pod
+  name: task-api-pod
 spec:
   containers:
-    - name: shop-api
-      image: shop-api:1.0.0
+    - name: task-api
+      image: task-api:1.0.0
       imagePullPolicy: IfNotPresent   # <-- CRITICAL for kind load to work!
 ```
 
 ---
 
-## 9. Complete Hands-On Lab: Build, Load & Run Locally
+## 9. Complete Hands-On Lab: Build, Load & Run `task-api`
 
-Let's put everything together in a 5-minute hands-on test.
+Let's test our real ElysiaJS `task-api` in Kind from scratch.
 
 ### 1. Create a Test Cluster
 ```bash
 kind create cluster --name lab-demo
 ```
 
-### 2. Create a Minimal App Dockerfile
-Create a temporary directory and Dockerfile:
+### 2. Build the `task-api` Docker Image
 ```bash
-mkdir -p /tmp/kind-demo && cd /tmp/kind-demo
-
-cat << 'EOF' > Dockerfile
-FROM alpine:3.20
-RUN apk add --no-cache curl
-CMD ["sh", "-c", "echo 'Hello from inside Kind!' && sleep 3600"]
-EOF
+docker build -t task-api:1.0.0 ./05-learn-k8s/task-api
 ```
 
-### 3. Build the Image on Your Host
+### 3. Load the Image into Kind
 ```bash
-docker build -t my-local-tool:1.0.0 .
+kind load docker-image task-api:1.0.0 --name lab-demo
 ```
 
-### 4. Load the Image into Kind
-```bash
-kind load docker-image my-local-tool:1.0.0 --name lab-demo
-```
-
-### 5. Run the Pod Manifest
-Create `test-pod.yaml`:
+### 4. Run the Pod Manifest
+Create `task-pod.yaml`:
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: local-tool-pod
+  name: task-api-pod
+  labels:
+    app: task-api
 spec:
   containers:
-    - name: tool
-      image: my-local-tool:1.0.0
+    - name: task-api
+      image: task-api:1.0.0
       imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 3000
 ```
 
 Apply and check:
 ```bash
-kubectl apply -f test-pod.yaml
-kubectl get pod local-tool-pod
+kubectl apply -f task-pod.yaml
+kubectl get pod task-api-pod
 ```
 *Output:*
 ```text
-NAME             READY   STATUS    RESTARTS   AGE
-local-tool-pod   1/1     Running   0          5s
+NAME           READY   STATUS    RESTARTS   AGE
+task-api-pod   1/1     Running   0          5s
 ```
 
-Check the pod logs:
+### 5. Test Live with Port-Forwarding
+Forward port `3000`:
 ```bash
-kubectl logs local-tool-pod
+kubectl port-forward pod/task-api-pod 3000:3000
 ```
-*Output:*
-```text
-Hello from inside Kind!
+
+In another terminal, test our 3 sample routes:
+```bash
+# 1. Welcome route
+curl http://localhost:3000/
+# Output: {"app":"task-api","framework":"ElysiaJS (Bun)","message":"🦊 Hello from Task API running inside Kubernetes!"...}
+
+# 2. Info route
+curl http://localhost:3000/info
+
+# 3. Tasks route
+curl http://localhost:3000/tasks
 ```
 
 ### 6. Clean Up
 ```bash
 kind delete cluster --name lab-demo
-rm -rf /tmp/kind-demo
 ```
 
 ---

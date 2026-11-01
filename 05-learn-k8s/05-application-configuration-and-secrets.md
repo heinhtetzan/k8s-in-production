@@ -412,61 +412,170 @@ Notice how `custom.cnf` was injected directly from our Kubernetes ConfigMap with
 
 ---
 
-### Step 6: Test Client Connection, Schema Creation & Query
+### Step 6: Connect Our ElysiaJS `task-api` to MySQL
 
-Now let's launch an interactive client container, connect to MySQL over the internal service network (`mysql-service:3306`), and verify the credentials.
+Now we deploy our custom **`task-api`** (from [`task-api`](./task-api/)) to communicate with MySQL internally:
+- `DB_HOST`: Injected from Service name `mysql-service`.
+- `DB_USER` & `DB_NAME`: Injected from `mysql-config` ConfigMap.
+- `DB_PASSWORD`: Injected securely from `mysql-secret` Secret.
 
-Run an ephemeral MySQL client pod:
+Create `task-api-deployment.yaml`:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-api
+  labels:
+    app: task-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: task-api
+  template:
+    metadata:
+      labels:
+        app: task-api
+    spec:
+      containers:
+        - name: task-api
+          image: task-api:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            # 1. Connect to MySQL internal Service
+            - name: DB_HOST
+              value: "mysql-service"
+            - name: DB_PORT
+              value: "3306"
+
+            # 2. Database Name & Username from ConfigMap
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: MYSQL_DATABASE
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: mysql-config
+                  key: MYSQL_USER
+
+            # 3. Database Password securely from Secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: mysql-password
+```
+
+Apply the deployment:
 ```bash
-kubectl run mysql-client --image=mysql:8.0 -it --rm -- \
-  mysql -h mysql-service -u shopuser -pAppUserPassword456! shopdb
+kubectl apply -f task-api-deployment.yaml
 ```
 
-You are now in the MySQL prompt! Execute SQL statements:
-
-```sql
--- 1. Verify database and user
-SELECT CURRENT_USER(), DATABASE();
-
--- 2. Create sample products table
-CREATE TABLE products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. Insert records
-INSERT INTO products (name, price) VALUES 
-('Mechanical Keyboard', 129.99),
-('Wireless Mouse', 49.50),
-('USB-C Monitor 4K', 399.00);
-
--- 4. Query data
-SELECT * FROM products;
+Wait until running:
+```bash
+kubectl get pods -l app=task-api
 ```
-
 *Output:*
 ```text
-+----+---------------------+--------+---------------------+
-| id | name                | price  | created_at          |
-+----+---------------------+--------+---------------------+
-|  1 | Mechanical Keyboard | 129.99 | 2026-11-01 10:55:00 |
-|  2 | Wireless Mouse      |  49.50 | 2026-11-01 10:55:00 |
-|  3 | USB-C Monitor 4K    | 399.00 | 2026-11-01 10:55:00 |
-+----+---------------------+--------+---------------------+
-3 rows in set (0.00 sec)
+NAME                        READY   STATUS    RESTARTS   AGE
+task-api-5c7499484f-4m9zt   1/1     Running   0          15s
+task-api-5c7499484f-w9kql   1/1     Running   0          15s
 ```
 
-Exit the client:
-```sql
-exit
+Check the pod logs to verify it auto-connected to MySQL and created the `tasks` table:
+```bash
+kubectl logs -l app=task-api --tail=5
+```
+*Output:*
+```text
+✅ [DB] Connected successfully to MySQL at mysql-service:3306/shopdb
+🦊 [task-api] Elysia is running at http://0.0.0.0:3000
 ```
 
 ---
 
-### Step 7: Clean Up Lab Resources
+### Step 7: Test the Live Todo API (Create & Read Real MySQL Data)
+
+Forward port `3000` to your host:
 ```bash
+kubectl port-forward deployment/task-api 3000:3000
+```
+
+Open a second terminal window and interact with the database through our Elysia API:
+
+#### 1. Check Info & Database Health:
+```bash
+curl http://localhost:3000/info
+```
+*Response:*
+```json
+{
+  "podName": "task-api-5c7499484f-4m9zt",
+  "nodeEnv": "production",
+  "port": 3000,
+  "uptimeSeconds": 24,
+  "database": {
+    "status": "connected",
+    "host": "mysql-service:3306",
+    "database": "shopdb"
+  }
+}
+```
+
+#### 2. Create a New Todo / Task via `POST /tasks`:
+```bash
+curl -X POST http://localhost:3000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Deploy to Production EKS", "description": "Master ConfigMaps and Secrets with MySQL"}'
+```
+*Response:*
+```json
+{
+  "message": "Task created successfully",
+  "pod": "task-api-5c7499484f-4m9zt",
+  "task": {
+    "id": 1,
+    "title": "Deploy to Production EKS",
+    "description": "Master ConfigMaps and Secrets with MySQL",
+    "completed": false,
+    "created_at": "2026-11-01T11:25:00.000Z"
+  }
+}
+```
+
+#### 3. Read Data Back from MySQL via `GET /tasks`:
+```bash
+curl http://localhost:3000/tasks
+```
+*Response:*
+```json
+{
+  "pod": "task-api-5c7499484f-4m9zt",
+  "source": "mysql",
+  "count": 1,
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Deploy to Production EKS",
+      "description": "Master ConfigMaps and Secrets with MySQL",
+      "completed": 0,
+      "created_at": "2026-11-01T11:25:00.000Z"
+    }
+  ]
+}
+```
+
+Notice `"source": "mysql"`! Our ElysiaJS API successfully parsed the credentials injected from Kubernetes ConfigMaps and Secrets and performed real persistent SQL queries!
+
+---
+
+### Step 8: Clean Up Lab Resources
+```bash
+kubectl delete -f task-api-deployment.yaml
 kubectl delete -f mysql-service.yaml
 kubectl delete -f mysql-deployment.yaml
 kubectl delete -f mysql-config.yaml
