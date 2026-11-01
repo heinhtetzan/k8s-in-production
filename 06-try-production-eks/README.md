@@ -28,57 +28,6 @@ Provisions the complete cloud infrastructure required to run the `kendrick-shop`
 
 ---
 
-## 💻 0. Local Development Quickstart
-
-### Start Full Stack Locally
-Ensure Docker is running, then run:
-```bash
-# 1. Copy environment template if not present
-cp .env.example .env
-
-# 2. Build and spin up PostgreSQL, API backend, Shop storefront, and Admin dashboard
-docker compose up --build
-```
-
-### Seed Initial Data & Products
-```bash
-# Populates 10 brands, 6 categories, 30 products with real S3 images, inventory stocks, and admin user
-curl -X POST http://localhost:9000/seed
-```
-
-### Local Service Endpoints
-- **Shop Storefront**: [http://localhost:9001](http://localhost:9001)
-- **Shop Admin Dashboard**: [http://localhost:9002](http://localhost:9002) *(Admin: `shop@kendrickdev.shop` / `admin123`)*
-- **API Health Check**: [http://localhost:9000/health](http://localhost:9000/health)
-- **Interactive Swagger Docs**: [http://localhost:9000/docs](http://localhost:9000/docs)
-- **PostgreSQL Database**: `localhost:5432` (`shop` / `shop` / `asdffdsa` or as configured in `.env`)
-
-### Run Automated Tests & Typechecks
-```bash
-# Run backend unit & integration tests
-cd services/api-app && bun test && bun x tsc --noEmit && cd ../..
-
-# Verify frontend builds
-cd services/shop-app && bun run build && cd ../..
-cd services/shop-dashboard && bun run build && cd ../..
-```
-
-### 💾 Backup Database & S3 Media (From Your Computer)
-Run single-command backups anytime from your terminal:
-```bash
-# 1. Full Backup (PostgreSQL Database + S3 Media Bucket)
-bun run backup
-
-# 2. Database only (streams clean .sql file to backups/)
-bun run backup:db
-
-# 3. S3 Media only (syncs product images & brand assets to backups/s3_media_<timestamp>/)
-bun run backup:s3
-```
-*See [doc/06-backup.md](./doc/06-backup.md) for full disaster recovery, AWS CLI snapshots, and restore procedures.*
-
----
-
 ## 🚀 AWS Cloud Deployment: Complete Step-by-Step Guide
 
 Follow these steps **in chronological order** to deploy the infrastructure, build the containers, and launch the application live on AWS.
