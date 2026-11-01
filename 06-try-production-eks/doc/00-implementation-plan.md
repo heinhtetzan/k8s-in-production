@@ -338,7 +338,7 @@ aws iam create-access-key --user-name github-actions-deployer
 ### Step 6.2: Add Credentials to GitHub Secrets
 
 1. Open your repository on GitHub:
-   [https://github.com/heinhtetzan/interview/settings/secrets/actions](https://github.com/heinhtetzan/interview/settings/secrets/actions)
+   [https://github.com/heinhtetzan/k8s-in-production/settings/secrets/actions](https://github.com/heinhtetzan/k8s-in-production/settings/secrets/actions)
 2. Under **Repository secrets**, click **New repository secret**:
    - **Name**: `AWS_ACCESS_KEY_ID`
    - **Secret**: Paste your IAM user's Access Key ID
@@ -409,7 +409,7 @@ git push origin main
 ```
 
 Monitor your live workflow under **GitHub Actions**:
-`https://github.com/heinhtetzan/interview/actions`
+`https://github.com/heinhtetzan/k8s-in-production/actions`
 
 GitHub Actions will automatically execute:
 1. **Test job**: Runs Bun tests and validates builds for `api-app`, `shop-app`, and `shop-dashboard`.

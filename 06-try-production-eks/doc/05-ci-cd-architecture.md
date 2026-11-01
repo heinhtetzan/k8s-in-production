@@ -118,7 +118,7 @@ aws iam create-access-key --user-name github-actions-deployer
 ### Step 2: Add AWS Credentials into GitHub Secrets
 
 1. Open your repository on GitHub:
-   `https://github.com/heinhtetzan/interview/settings/secrets/actions`
+   `https://github.com/heinhtetzan/k8s-in-production/settings/secrets/actions`
 2. Click **New repository secret** and create:
    - `AWS_ACCESS_KEY_ID`: Your IAM user access key
    - `AWS_SECRET_ACCESS_KEY`: Your IAM secret access key

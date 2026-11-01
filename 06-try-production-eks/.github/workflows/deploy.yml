@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
+      - dev
     paths:
-      - 'kendrick-shop/**'
+      - '06-try-production-eks/**'
       - '.github/workflows/**'
   workflow_dispatch:
 
@@ -45,7 +46,7 @@ jobs:
           bun-version: latest
 
       - name: Test API App
-        working-directory: kendrick-shop/services/api-app
+        working-directory: 06-try-production-eks/services/api-app
         env:
           DATABASE_URL: postgres://shop:password123@localhost:5432/shop
           DB_SSL: 'false'
@@ -54,13 +55,13 @@ jobs:
           bun test
 
       - name: Build & Validate Shop Storefront
-        working-directory: kendrick-shop/services/shop-app
+        working-directory: 06-try-production-eks/services/shop-app
         run: |
           bun install
           bun run build
 
       - name: Build & Validate Admin Dashboard
-        working-directory: kendrick-shop/services/shop-dashboard
+        working-directory: 06-try-production-eks/services/shop-dashboard
         run: |
           bun install
           bun run build
@@ -100,7 +101,7 @@ jobs:
       - name: Build & Push api-app
         uses: docker/build-push-action@v5
         with:
-          context: ./kendrick-shop/services/api-app
+          context: ./06-try-production-eks/services/api-app
           target: prod
           platforms: linux/amd64
           push: true
@@ -112,7 +113,7 @@ jobs:
       - name: Build & Push shop-app
         uses: docker/build-push-action@v5
         with:
-          context: ./kendrick-shop/services/shop-app
+          context: ./06-try-production-eks/services/shop-app
           target: runner
           platforms: linux/amd64
           push: true
@@ -124,7 +125,7 @@ jobs:
       - name: Build & Push shop-dashboard
         uses: docker/build-push-action@v5
         with:
-          context: ./kendrick-shop/services/shop-dashboard
+          context: ./06-try-production-eks/services/shop-dashboard
           target: runner
           platforms: linux/amd64
           push: true
@@ -159,7 +160,7 @@ jobs:
           IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}
           
           # Deploy workloads, Ingress, and Autoscalers via Kustomize
-          kubectl apply -k kendrick-shop/k8s/eks
+          kubectl apply -k 06-try-production-eks/k8s/eks
           
           # Update images to latest built commit
           kubectl set image deployment/api-app api-app=${{ env.ECR_REGISTRY }}/kendrick-shop-api:${IMAGE_TAG}
