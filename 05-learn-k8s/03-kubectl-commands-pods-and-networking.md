@@ -583,8 +583,10 @@ In this lesson, we established practical day-to-day fluency with `kubectl`:
 ---
 
 ### 🗺️ Next Lesson in Module 05
-In **[`04-kubernetes-architecture-and-core-components.md`](./04-kubernetes-architecture-and-core-components.md)**, we inspect what is actually happening behind the scenes inside our cluster when these commands run:
-- The Control Plane: `kube-apiserver`, `etcd`, `kube-scheduler`, and `kube-controller-manager`.
-- The Worker Node: `kubelet`, `containerd`, and `kube-proxy`.
-- Complete Lifecycle Trace: The life of a Pod request from `kubectl apply` to running process.
+In **[`04-services-and-networking.md`](./04-services-and-networking.md)**, we solve the ephemeral Pod IP problem and connect microservices internally:
+- What is a Kubernetes Service and why Pod IPs cannot be hardcoded.
+- Understanding `ClusterIP`, `NodePort`, and `LoadBalancer`.
+- Port Mapping: `port` vs. `targetPort` vs. `nodePort`.
+- Automatic service discovery via **CoreDNS**.
+- Endpoints, EndpointSlices, and testing round-robin load balancing.
 

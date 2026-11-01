@@ -28,17 +28,17 @@ A practical, hands-on curriculum taking you from container orchestration fundame
 flowchart TD
     L1["01. What is Kubernetes?<br/>Why K8s, Features, Docker vs K8s, Local & Cloud"] --> L2["02. Local K8s with Kind<br/>Kind CLI, kubectl boundary & image loading secret"]
     L2 --> L3["03. Hands-On with kubectl<br/>Contexts, Pods, Deployments & Port-Forwarding"]
-    L3 --> L4["04. Kubernetes Architecture<br/>Control Plane, Worker Nodes & Pod Anatomy"]
-    L4 --> L5["05. Networking & Services<br/>ClusterIP, NodePort, LoadBalancer & CoreDNS"]
-    L5 --> L6["06. Configuration & Secrets<br/>ConfigMaps, Secrets & Environment Decoupling"]
-    L6 --> L7["07. Health & Storage<br/>Liveness/Readiness Probes, PV & PVC"]
+    L3 --> L4["04. Services & Networking<br/>ClusterIP, NodePort, LoadBalancer & CoreDNS"]
+    L4 --> L5["05. Configuration & Secrets<br/>ConfigMaps, Secrets & Environment Decoupling"]
+    L5 --> L6["06. Health & Storage<br/>Liveness/Readiness Probes, PV & PVC"]
+    L6 --> L7["07. Rollouts & Autoscaling<br/>RollingUpdate, maxSurge, HPA & Karpenter"]
     L7 --> L8["08. Production Readiness<br/>k9s, Security, Limits & Migration to EKS"]
 
     classDef active fill:#1f1929,stroke:#7c5295,stroke-width:2px,color:#ffffff;
     classDef planned fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#ffffff;
 
-    class L1,L2,L3,L4 active;
-    class L5,L6,L7,L8 planned;
+    class L1,L2,L3,L4,L5 active;
+    class L6,L7,L8 planned;
 ```
 
 ---
@@ -50,9 +50,9 @@ flowchart TD
 | **01** | **[What is Kubernetes? Architecture, Features & Ecosystem](./01-what-is-kubernetes.md)** | • Why we need orchestration & main features<br>• Docker vs. Docker Compose vs. Kubernetes<br>• Local (Kind, K3s, K9s) vs. Cloud (AWS EKS, GCP GKE, Azure AKS)<br>• Curriculum strategy: Kind local & AWS EKS production | ✅ Ready |
 | **02** | **[Kubernetes in Local with Kind](./02-kubernetes-in-local-with-kind.md)** | • Installing `kind` & `kubectl`<br>• Cluster lifecycle (`create`, `get`, `delete`)<br>• `kind` manages clusters vs. `kubectl` manages workloads<br>• The extra secret: `kind load docker-image` & `imagePullPolicy` | ✅ Ready |
 | **03** | **[Hands-On with kubectl: Contexts, Pods, Deployments & Port-Forwarding](./03-kubectl-commands-pods-and-networking.md)** | • Context management (`get-contexts`, `use-context`)<br>• Pod creation (imperative vs `--dry-run=client -o yaml`)<br>• Deployments & self-healing verification<br>• Network testing via `kubectl port-forward` | ✅ Ready |
-| **04** | **[Kubernetes Architecture & Core Components](./04-kubernetes-architecture-and-core-components.md)** | • Control Plane: API Server, etcd, Scheduler, Controller Manager<br>• Worker Nodes: Kubelet, Kube-proxy, Containerd<br>• Pod anatomy & life of a Pod lifecycle trace | ✅ Ready |
-| **05** | **Service Discovery & Networking** | • Pod-to-Pod networking<br>• ClusterIP, NodePort, LoadBalancer, Ingress | ⏳ Next |
-| **06** | **Application Configuration & Secrets** | • Decoupling config from images<br>• ConfigMaps, Secrets, volume mounts | ⏳ Upcoming |
-| **07** | **Health Checks & Persistent Storage** | • Startup, Liveness, and Readiness probes<br>• PersistentVolumes (PV), Claims (PVC), StorageClasses | ⏳ Upcoming |
+| **04** | **[Kubernetes Services & Internal Networking](./04-services-and-networking.md)** | • The ephemeral Pod IP problem<br>• Service types: `ClusterIP`, `NodePort`, `LoadBalancer`<br>• Port mapping (`port` vs `targetPort` vs `nodePort`)<br>• In-cluster DNS with CoreDNS & round-robin load balancing | ✅ Ready |
+| **05** | **[Application Configuration & Secrets (MySQL Lab)](./05-application-configuration-and-secrets.md)** | • The 12-factor decoupling principle<br>• ConfigMaps (env vars & mounting custom `my.cnf`)<br>• Secrets (`Opaque`, base64 myth, etcd encryption)<br>• Hands-on MySQL deployment & client query lab | ✅ Ready |
+| **06** | **Health Checks & Persistent Storage** | • Startup, Liveness, and Readiness probes<br>• PersistentVolumes (PV), Claims (PVC), StorageClasses | ⏳ Next |
+| **07** | **Rollouts & Autoscaling** | • RollingUpdate tuning (`maxSurge`, `maxUnavailable`)<br>• Rollback commands (`rollout undo`), HPA autoscaling | ⏳ Upcoming |
 | **08** | **Observability, Security & Production Patterns** | • Mastering `k9s` and `kubectl describe/logs/exec`<br>• Resource requests/limits, SecurityContext & EKS promotion | ⏳ Upcoming |
 
