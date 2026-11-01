@@ -20,6 +20,123 @@ This directory contains the modularized production Kubernetes manifests for runn
 
 ---
 
+## 🏛️ EKS Production Architecture & Configuration Diagram
+
+This diagram visualizes the complete end-to-end production Kubernetes architecture on Amazon EKS, including single AWS Application Load Balancer (ALB) ingress routing, ACM wildcard SSL termination, multi-tier autoscaling, configuration management, and managed AWS backing services:
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'darkMode': true, 'background': '#0d1117', 'mainBkg': '#1e293b', 'primaryColor': '#1e293b', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#38bdf8', 'lineColor': '#94a3b8', 'textColor': '#ffffff'}}}%%
+flowchart TD
+    subgraph Clients["Internet Users & Route 53 DNS"]
+        U_Store["Storefront Users\nhttps://kendrickdev.shop\nhttps://www.kendrickdev.shop"]
+        U_Dash["Store Managers\nhttps://dashboard.kendrickdev.shop"]
+        U_API["API Clients & Mobile\nhttps://api.kendrickdev.shop"]
+        R53["AWS Route 53 (DNS)"]
+    end
+
+    subgraph AWS_Ingress["AWS Edge & Ingress Layer"]
+        ALB["AWS Application Load Balancer (ALB)\nManaged by AWS Load Balancer Controller\nHTTP 80 -> HTTPS 443 Automatic Redirect"]
+        ACM["AWS Certificate Manager (ACM)\nWildcard SSL: *.kendrickdev.shop"]
+        ACM -.->|"TLS Termination (Port 443)"| ALB
+    end
+
+    subgraph Cluster["Amazon EKS Cluster (VPC Private Subnets)"]
+        subgraph IngressRules["Ingress Host Routing (05-ingress.yaml)"]
+            Rule_Store["Host: kendrickdev.shop\nPath: / -> shop-app-service:3000"]
+            Rule_Dash["Host: dashboard.kendrickdev.shop\nPath: / -> shop-dashboard-service:9002"]
+            Rule_API["Host: api.kendrickdev.shop\nPath: / -> api-app-service:8000"]
+        end
+
+        subgraph Services["Kubernetes Services Layer"]
+            Svc_Shop["shop-app-service\nTargetPort: 3000"]
+            Svc_Dash["shop-dashboard-service\nTargetPort: 9002"]
+            Svc_API["api-app-service\nTargetPort: 8000"]
+        end
+
+        subgraph Deployments["Application Deployments (Auto-Scaled Workloads)"]
+            Pod_Shop["shop-app (Min: 2, Max: 5 Replicas)\nTanStack Start Storefront\nImage: ECR / kendrick-shop-app:latest"]
+            Pod_Dash["shop-dashboard (Min: 1, Max: 3 Replicas)\nTanStack Start Admin UI\nImage: ECR / kendrick-shop-dashboard:latest"]
+            Pod_API["api-app (Min: 2, Max: 6 Replicas)\nBun + Hono Backend API\nImage: ECR / kendrick-shop-api:latest"]
+        end
+
+        subgraph Autoscaling["Telemetry & Autoscaling Plane"]
+            MS["Kubernetes Metrics Server\nCollects CPU & Memory Telemetry"]
+            HPA["Horizontal Pod Autoscaler (04-hpa.yaml)\nThresholds: CPU > 70% | Memory > 80%"]
+            CA["Cluster Autoscaler (cluster-autoscaler.yaml)\nWatches Pending Pod Scheduling"]
+        end
+
+        subgraph ClusterConfig["Configuration & Secrets"]
+            CM["ConfigMap: shop-config\nAPI_PORT=8000 | SHOP_PORT=3000 | DASHBOARD_PORT=9002\nINTERNAL_API_URL=http://api-app-service:8000\nDB_SSL=true | NODE_ENV=production"]
+            Sec["Secret: postgres-secret\nAWS RDS Credentials & DATABASE_URL\n(sslmode=require)"]
+        end
+    end
+
+    subgraph AWS_Managed["External Managed AWS Cloud Services"]
+        RDS[("AWS RDS PostgreSQL 16\nManaged Multi-AZ Database")]
+        ECR["AWS Elastic Container Registry (ECR)\nContainer Images Repository"]
+        ASG["AWS EC2 Auto Scaling Group\nWorker Nodes (Min: 1, Max: 5)"]
+        CW["AWS CloudWatch\nControl Plane Logs & Metrics"]
+    end
+
+    %% Client Traffic
+    U_Store & U_Dash & U_API --> R53 --> ALB
+    ALB --> Rule_Store & Rule_Dash & Rule_API
+
+    Rule_Store --> Svc_Shop --> Pod_Shop
+    Rule_Dash --> Svc_Dash --> Pod_Dash
+    Rule_API --> Svc_API --> Pod_API
+
+    %% Internal Communication
+    Pod_Shop -.->|"SSR / Internal API (CoreDNS)"| Svc_API
+    Pod_Dash -.->|"Internal API (CoreDNS)"| Svc_API
+
+    %% Database Connection
+    Pod_API ==>|"Encrypted TLS (Port 5432)"| RDS
+
+    %% Image Pulls
+    ECR -.->|"Pull on Rollout"| Deployments
+
+    %% Config Injection
+    CM -.->|"Inject Config & Ports"| Deployments
+    Sec -.->|"Inject DATABASE_URL"| Pod_API
+
+    %% Autoscaling Feedback Loops
+    Deployments -.->|"Pod CPU & RAM"| MS
+    MS --> HPA
+    HPA -.->|"Scale Pod Replicas"| Deployments
+    CA -.->|"Scale EC2 Instances"| ASG
+
+    %% CloudWatch Logs
+    Cluster -.->|"API Server, Audit & Scheduler Logs"| CW
+
+    classDef clientNode fill:#0f172a,stroke:#64748b,stroke-width:2px,color:#ffffff;
+    classDef albNode fill:#1e293b,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+    classDef svcNode fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
+    classDef podNode fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff;
+    classDef scaleNode fill:#1e293b,stroke:#22c55e,stroke-width:2px,color:#ffffff;
+    classDef awsNode fill:#1e293b,stroke:#ec4899,stroke-width:2px,color:#ffffff;
+    classDef cfgNode fill:#1e293b,stroke:#eab308,stroke-width:2px,color:#ffffff;
+
+    class U_Store,U_Dash,U_API,R53 clientNode;
+    class ALB,ACM,Rule_Store,Rule_Dash,Rule_API albNode;
+    class Svc_Shop,Svc_Dash,Svc_API svcNode;
+    class Pod_Shop,Pod_Dash,Pod_API podNode;
+    class MS,HPA,CA scaleNode;
+    class RDS,ECR,ASG,CW awsNode;
+    class CM,Sec cfgNode;
+```
+
+### 💡 Production Configuration Breakdown (vs Local):
+- **Single AWS ALB Ingress:** Replaces multiple costly Classic Load Balancers with a single AWS Application Load Balancer via [`05-ingress.yaml`](./05-ingress.yaml), reducing AWS infrastructure costs by ~66% (~$20/mo vs ~$60/mo).
+- **Wildcard SSL & HTTP-to-HTTPS:** Terminates `*.kendrickdev.shop` certificates at the ALB via AWS ACM and automatically redirects port 80 (HTTP) to port 443 (HTTPS).
+- **Two-Tier Autoscaling:**
+  - **Horizontal Pod Autoscaler (HPA):** Scales pod replicas across all 3 services based on real-time CPU (70%) and Memory (80%) metrics collected by Kubernetes Metrics Server.
+  - **Cluster Autoscaler:** Automatically provisions additional EC2 worker nodes (1–5 nodes) in the AWS Auto Scaling Group when pending pods cannot be scheduled.
+- **Enterprise Persistence & Security:** Directs database traffic to managed AWS RDS PostgreSQL with enforced SSL encryption (`DB_SSL="true"`, `sslmode=require`).
+- **Zero-Downtime Rolling Updates:** Configured with `RollingUpdate` strategy (`maxSurge: 1`, `maxUnavailable: 0`) and a 5-second `preStop` sleep hook to allow AWS ALB target groups to deregister draining pods before traffic interruption.
+
+---
+
 ## 🚀 Quick Deployment Guide
 
 ### Step 1: Ensure AWS RDS Secret Exists
