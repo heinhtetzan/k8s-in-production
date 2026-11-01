@@ -1,0 +1,17 @@
+{
+  "name": "task-api",
+  "version": "1.0.0",
+  "description": "Production Kubernetes Demo API built with ElysiaJS & MySQL",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "elysia": "^1.2.10",
+    "mysql2": "^3.11.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
