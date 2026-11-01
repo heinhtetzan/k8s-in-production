@@ -1,0 +1,58 @@
+# Module 05: Learn Kubernetes (K8s)
+
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)](#)
+[![Kind](https://img.shields.io/badge/Local_Cluster-Kind%20%7C%20K3s-black?style=for-the-badge&logo=docker)](#)
+[![Tools](https://img.shields.io/badge/TUI-k9s-orange?style=for-the-badge)](#)
+
+A practical, hands-on curriculum taking you from container orchestration fundamentals to mastering core Kubernetes primitives (Pods, Deployments, Services, ConfigMaps, Secrets, Storage, Probes, and Autoscaling) running locally in **Kind** / **K3s** and preparing for cloud production on **AWS EKS**, **GCP GKE**, and **Azure AKS**.
+
+---
+
+## 🗺️ Curriculum Roadmap
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#e2e8f0',
+    'primaryBorderColor': '#475569',
+    'lineColor': '#64748b',
+    'textColor': '#e2e8f0',
+    'edgeLabelBackground': '#0f172a'
+  },
+  'themeCSS': '* { filter: none !important; box-shadow: none !important; } .node * { filter: none !important; } .cluster * { filter: none !important; }'
+}}%%
+flowchart TD
+    L1["01. What is Kubernetes?<br/>Why K8s, Features, Docker vs K8s, Local & Cloud"] --> L2["02. Local K8s with Kind<br/>Kind CLI, kubectl boundary & image loading secret"]
+    L2 --> L3["03. Hands-On with kubectl<br/>Contexts, Pods, Deployments & Port-Forwarding"]
+    L3 --> L4["04. Kubernetes Architecture<br/>Control Plane, Worker Nodes & Pod Anatomy"]
+    L4 --> L5["05. Networking & Services<br/>ClusterIP, NodePort, LoadBalancer & CoreDNS"]
+    L5 --> L6["06. Configuration & Secrets<br/>ConfigMaps, Secrets & Environment Decoupling"]
+    L6 --> L7["07. Health & Storage<br/>Liveness/Readiness Probes, PV & PVC"]
+    L7 --> L8["08. Production Readiness<br/>k9s, Security, Limits & Migration to EKS"]
+
+    classDef active fill:#1f1929,stroke:#7c5295,stroke-width:2px,color:#ffffff;
+    classDef planned fill:#17212b,stroke:#38668c,stroke-width:1.5px,color:#ffffff;
+
+    class L1,L2,L3,L4 active;
+    class L5,L6,L7,L8 planned;
+```
+
+---
+
+## 📚 Lessons Overview
+
+| Lesson | Title | Core Topics | Status |
+| :---: | :--- | :--- | :---: |
+| **01** | **[What is Kubernetes? Architecture, Features & Ecosystem](./01-what-is-kubernetes.md)** | • Why we need orchestration & main features<br>• Docker vs. Docker Compose vs. Kubernetes<br>• Local (Kind, K3s, K9s) vs. Cloud (AWS EKS, GCP GKE, Azure AKS)<br>• Curriculum strategy: Kind local & AWS EKS production | ✅ Ready |
+| **02** | **[Kubernetes in Local with Kind](./02-kubernetes-in-local-with-kind.md)** | • Installing `kind` & `kubectl`<br>• Cluster lifecycle (`create`, `get`, `delete`)<br>• `kind` manages clusters vs. `kubectl` manages workloads<br>• The extra secret: `kind load docker-image` & `imagePullPolicy` | ✅ Ready |
+| **03** | **[Hands-On with kubectl: Contexts, Pods, Deployments & Port-Forwarding](./03-kubectl-commands-pods-and-networking.md)** | • Context management (`get-contexts`, `use-context`)<br>• Pod creation (imperative vs `--dry-run=client -o yaml`)<br>• Deployments & self-healing verification<br>• Network testing via `kubectl port-forward` | ✅ Ready |
+| **04** | **[Kubernetes Architecture & Core Components](./04-kubernetes-architecture-and-core-components.md)** | • Control Plane: API Server, etcd, Scheduler, Controller Manager<br>• Worker Nodes: Kubelet, Kube-proxy, Containerd<br>• Pod anatomy & life of a Pod lifecycle trace | ✅ Ready |
+| **05** | **Service Discovery & Networking** | • Pod-to-Pod networking<br>• ClusterIP, NodePort, LoadBalancer, Ingress | ⏳ Next |
+| **06** | **Application Configuration & Secrets** | • Decoupling config from images<br>• ConfigMaps, Secrets, volume mounts | ⏳ Upcoming |
+| **07** | **Health Checks & Persistent Storage** | • Startup, Liveness, and Readiness probes<br>• PersistentVolumes (PV), Claims (PVC), StorageClasses | ⏳ Upcoming |
+| **08** | **Observability, Security & Production Patterns** | • Mastering `k9s` and `kubectl describe/logs/exec`<br>• Resource requests/limits, SecurityContext & EKS promotion | ⏳ Upcoming |
+
