@@ -347,6 +347,7 @@ For comprehensive engineering and operational deep dives, refer to our detailed 
 
 | Document | Focus & Highlights |
 | :--- | :--- |
+| [**Docker Compose Quickstart**](./docker-compose.md) | Local full-stack development, database seeding, endpoints, testing, and backup commands |
 | [**00. Master Implementation Plan**](./doc/00-implementation-plan.md) | Chronological Phase 1–7 step-by-step roadmap from local docker compose to live production EKS |
 | [**01. Local Kubernetes Guide**](./doc/01-local-k8s-guide.md) | Free local development using Docker Desktop Kubernetes (`k8s/local`) vs. cloud production EKS |
 | [**02. EKS Cluster Overview**](./doc/02-eks-cluster-overview.md) | End-to-end architecture diagram, AWS service catalog & cost analysis, VPC topology, and workload math |
